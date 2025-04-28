@@ -1,0 +1,6 @@
+# Ignore compiled binaries
+a.out
+
+# Ignore VS Code settings
+.vscode/
+
