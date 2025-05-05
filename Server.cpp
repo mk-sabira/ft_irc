@@ -20,6 +20,17 @@ Server::~Server()
         close(_serverFd);
 }
 
+// Create a socket using the system call for IPv4 and TCP.
+// Set up a sockaddr_in structure to define:
+// IP address: accept any (INADDR_ANY)
+// Port number: use the given port (e.g. 6667)
+// Address family: IPv4
+// Bind the socket to the address and port so the OS knows you want to listen there.
+// Start listening on the socket, allowing multiple clients to connect.
+// (Optional) Print messages if each step is successful or fails.
+// Return true if everything was successful, otherwise false.
+
+
 bool Server::setup(int port)
 {
     // Create the socket
