@@ -1,25 +1,31 @@
 #include "main.hpp"
 #include "Server.hpp"
 
-int main(int arc, char** arv)
+int main(int argc, char **argv)
 {
-    if ( arc != 3)
+    try
     {
-        std::cout << "Program runs with: ./ircserv <port> <password>" << std::endl;
+        if (argc != 3)
+        {
+            std::cerr << "Usage: ./ircserv <port> <password>" << std::endl;
+            return (1);
+        }
+
+        Server server(argv[1], argv[2]);
+
+        if (!server.serverSetup())
+        {
+            std::cerr << "Server setup failed." << std::endl;
+            return (1);
+        }
+
+        server.runServer();
+    }
+    catch (const std::exception &e)
+    {
+        std::cerr << e.what() << std::endl;
         return (1);
     }
-    else
-    {
-        try
-        {
-            Server server(arv[1], arv[2]);
-            server.serverSetup();
-        }
-        catch(const std::exception& e)
-        {
-            std::cerr << e.what() << '\n';
-        }
-        
-    }
+
     return (0);
 }

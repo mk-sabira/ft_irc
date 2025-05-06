@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   server.cpp                                         :+:      :+:    :+:   */
+/*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/02 10:25:46 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/05 12:28:32 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/06 11:03:50 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,6 +46,11 @@ bool Server::serverSetup()
         return (false);
     }
 
+    if (fcntl(_serverFd, F_SETFL, O_NONBLOCK) == -1)
+    {
+        std::cout << "Failed to set non-blocking mode" << std::endl;
+        return (false);
+    }
     _serverAdd.sin_family = AF_INET;
     _serverAdd.sin_addr.s_addr = INADDR_ANY;
     _serverAdd.sin_port = htons(_port);
@@ -61,7 +66,14 @@ bool Server::serverSetup()
         std::cout << "Listen failed" << std::endl;
         return (false);
     }
-    // std::cout << _serverFd << std::endl;
+    
+    struct pollfd serverPollFd;
+    serverPollFd.fd = _serverFd;
+    serverPollFd.events = POLLIN;
+    serverPollFd.revents = 0;
+    _fds.push_back(serverPollFd);
+    
+    std::cout << _serverFd << std::endl;
     return (true);
 }
 
@@ -71,84 +83,208 @@ bool Server::serverSetup()
 // Monitors existing clients for new messages or disconnections
 // Handles input/output events
 
+// Waits for activity using select() (or poll() / epoll()).
+// Accepts new client connections when a client tries to connect.
+// Reads incoming messages from already-connected clients.
+// Handles disconnections if a client closes the connection or crashes.
+// Dispatches data to the right handler (e.g., IRC commands like NICK, USER).
 bool Server::runServer()
 {
+    while (true)
+    {
+        int pollCount = poll(&_fds[0], _fds.size(), -1);
+        if (pollCount == -1)
+        {
+            std::cerr << "poll() failed" << std::endl;
+            return (false);
+        }
+
+        for (size_t i = 0; i < _fds.size(); i++)
+        {
+            // If it's the server socket and it's ready for reading (incoming connection)
+            if (_fds[i].fd == _serverFd && _fds[i].revents && POLLIN)
+                acceptNewClient();
+            // If it's a client socket and it's ready for reading (incoming data)
+            else if (_fds[i].fd != _serverFd && _fds[i].revents && POLLIN)
+                recieveData(_fds[i].fd);
+        }
+    }
     
     return (false);
 }
 
-// // Main loop to handle connections and messages
-// bool Server::run() {
-//     // Array of pollfd structs to monitor multiple file descriptors (server + clients)
-//     struct pollfd fds[100];  // You can increase this number as needed
+void Server::acceptNewClient()
+{
+    struct sockaddr_in clientAddr;
+    socklen_t clientLen = sizeof(clientAddr);
+    
+    int clientFd = accept(_serverFd, (struct sockaddr*)& clientAddr, &clientLen);
+    if (clientFd == -1)
+    {
+        std::cerr << "Failed to accept new clinet" << std::endl;
+        return ;
+    }
 
-//     int nfds = 1; // Number of file descriptors currently tracked
-//     fds[0].fd = _serverFd;   // First FD is the server socket (used to accept clients)
-//     fds[0].events = POLLIN;   // Watch for readable events (incoming connections)
+    if (fcntl(clientFd, F_SETFL, O_NONBLOCK) == -1)
+    {
+        std::cerr << "Failed to set client socket to non-blocking" << std::endl;
+        close(clientFd);
+        return ;
+    }
 
-//     // Infinite loop: server runs forever
-//     while (true) {
-//         // Wait until any socket has data or connection using poll()
-//         int ret = poll(fds, nfds, -1);  // -1 means wait indefinitely
+    struct pollfd clientPollFd;
+    clientPollFd.fd = clientFd;
+    clientPollFd.events = POLLIN;
+    clientPollFd.revents = 0;
 
-//         if (ret < 0) {
-//             std::cerr << "Poll error\n";  // If poll fails, print error
-//             return false;
-//         }
+    _fds.push_back(clientPollFd);
 
-//         // Check if the server socket has an incoming connection
-//         if (fds[0].revents & POLLIN) {
-//             // Accept the new client connection
-//             int client_fd = accept(_serverFd, NULL, NULL);
-//             if (client_fd != -1)
-//             {
-//                 // Add the new client socket to the poll array
-//                 fds[nfds].fd = client_fd;
-//                 fds[nfds].events = POLLIN;  // We want to read from this client
-//                 nfds++; // Increase number of tracked sockets
+    Client client;
+    client.setFd(clientFd);
+    client.setAuthenticated(false);
+    _clients[clientFd] = client;
+    std::cout << "New client connected: FD = " << clientFd << std::endl;
+}
 
-//                 std::cout << "New client connected: fd = " << client_fd << std::endl;
+void Server::recieveData(int clientFd)
+{
+    char buffer[512];
+    size_t bytesRead;
+    
+    bytesRead = recv(clientFd, buffer, sizeof(buffer) - 1, 0);
+    if (bytesRead < 0)
+    {
+        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+            return;
+        }
+        std::cerr << "Error reading from client FD " << clientFd << ": " << strerror(errno) << std::endl;
+        close(clientFd);
+        _clients.erase(clientFd);
+        for (std::vector<struct pollfd>::iterator it = _fds.begin(); it != _fds.end(); ++it) 
+        {
+            if (it->fd == clientFd)
+            {
+                _fds.erase(it);
+                break;
+            }
+        }
+        std::cout << "Client FD " << clientFd << " disconnected" << std::endl;
+        return;
+    }
+    if (bytesRead == 0)
+    {
+        close(clientFd);
+        _clients.erase(clientFd);
+        for (std::vector<struct pollfd>::iterator it  = _fds.begin(); it != _fds.end(); it++)
+        {
+            if (it->fd == clientFd)
+            {
+                _fds.erase(it);
+                break;
+            }
+        }
+        std::cout << "Client FD " << clientFd << " disconnected" << std::endl;
+        return ;
+    }
+    buffer[bytesRead] = '\0';
 
-//                 // Send IRC welcome message to the client
-//                 std::string nickname = "guest"; // You can update this later when parsing NICK command
-//                 std::string welcome = ":localhost 001 " + nickname + " :Welcome to the IRC server\r\n";
+    _clients[clientFd].getBuffer() += buffer;
 
-//                 // Send message to client
-//                 send(client_fd, welcome.c_str(), welcome.length(), 0);
-//             }
-//         }
+    std::string::size_type pos;
+    while ((pos = _clients[clientFd].getBuffer().find("\r\n")) != std::string::npos)
+    {
+        std::string command = _clients[clientFd].getBuffer().substr(0, pos);
+        _clients[clientFd].getBuffer().erase(0, pos + 2); // Remove processed command
+        if (!command.empty())
+        {
+            processCommand(clientFd, command);
+        }
+    }
+}
 
-//         // Loop through all connected clients (skip index 0 which is server)
-//         for (int i = 1; i < nfds; ++i) {
-//             // If this client socket has data to read
-//             if (fds[i].revents & POLLIN) {
-//                 char buffer[512];  // Temporary buffer to store the message
-//                 int bytes = recv(fds[i].fd, buffer, sizeof(buffer) - 1, 0);  // Receive data
+void Server::processCommand(int clientFd, const std::string& command)
+{
+    std::cout << "Received command from FD " << clientFd << ": " << command << std::endl;
 
-//                 if (bytes <= 0) {
-//                     // If recv fails or client disconnects
-//                     std::cout << "Client disconnected: fd = " << fds[i].fd << std::endl;
-//                     close(fds[i].fd); // Close that client's socket
+    // Parse command into tokens
+    std::vector<std::string> tokens;
+    std::string::size_type start = 0;
+    std::string::size_type end = command.find(' ');
+    while (end != std::string::npos) {
+        tokens.push_back(command.substr(start, end - start));
+        start = end + 1;
+        end = command.find(' ', start);
+    }
+    tokens.push_back(command.substr(start));
 
-//                     // Remove this client from the poll array by replacing it with the last one
-//                     fds[i] = fds[nfds - 1];
-//                     nfds--;  // Decrease the number of active sockets
-//                     i--;     // Stay on the same index after replacing
-//                 } else {
-//                     // Null-terminate the received message and print it
-//                     buffer[bytes] = '\0';
-//                     std::cout << "Received from client " << fds[i].fd << ": " << buffer;
-//                 }
-//             }
-//         }
-//     }
+    if (tokens.empty()) {
+        return;
+    }
 
-//     return true;
-// }
+    std::string cmd = tokens[0];
+    // Convert to uppercase for case-insensitive comparison
+    for (std::string::size_type i = 0; i < cmd.length(); ++i) {
+        cmd[i] = std::toupper(cmd[i]);
+    }
+
+    // Handle PASS command
+    if (cmd == "PASS") {
+        if (tokens.size() < 2) {
+            std::string reply = ":server 461 PASS :Not enough parameters\r\n";
+            send(clientFd, reply.c_str(), reply.length(), 0);
+            return;
+        }
+        if (_clients[clientFd].isAuthenticated())
+        {
+            std::string reply = ":server 462 :You may not reregister\r\n";
+            send(clientFd, reply.c_str(), reply.length(), 0);
+            return;
+        }
+        if (tokens[1] == _password) {
+            _clients[clientFd].setAuthenticated(true);
+            std::cout << "Client FD " << clientFd << " authenticated" << std::endl;
+        } else {
+            std::string reply = ":server 464 :Password incorrect\r\n";
+            send(clientFd, reply.c_str(), reply.length(), 0);
+            close(clientFd);
+            _clients.erase(clientFd);
+            for (std::vector<struct pollfd>::iterator it = _fds.begin(); it != _fds.end(); ++it) {
+                if (it->fd == clientFd) {
+                    _fds.erase(it);
+                    break;
+                }
+            }
+            std::cout << "Client FD " << clientFd << " disconnected (wrong password)" << std::endl;
+        }
+    } else {
+        // For testing, reject non-PASS commands
+        std::string reply = ":server 421 " + cmd + " :Unknown command\r\n";
+        send(clientFd, reply.c_str(), reply.length(), 0);
+    }
+}
+
+//setters
+void Server::setPort(int& port)
+{
+    _port = port;
+}
+
+void Server::setPassword(std::string& password)
+{
+    _password = password;
+}
 
 
+//getters
+int Server::getPort() const
+{
+    return (_port);
+}
 
-
+std::string Server::getPassword() const
+{
+    return (_password);
+}
 
 const char* Server::PortOutOfBound::what() const throw()
 {
