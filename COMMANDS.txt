@@ -1,0 +1,58 @@
+/*
+    channel Commands:
+        - JOIN
+       // - PART
+        - MODE
+        - TOPIC
+        //- NAMES
+       // - LIST
+        - INVITE
+        - KICK
+*/
+
+✅ JOIN: add user to channel
+    - bool canJoin(int clientFd, const std::string& key);
+
+    - void addUser(int clientFd);
+
+    - bool isFull() const;
+
+    - bool isInviteOnly() const;
+
+    - bool isInvited(int clientFd) const;
+
+✅ PART: remove user from channel
+    - void removeUser(int clientFd);
+
+    - bool isUser(int clientFd) const;
+
+✅ MODE: Manage channel settings like invite-only, key, topic-lock, etc.
+
+    - void setMode(char mode, bool enable);
+
+    - bool hasMode(char mode) const;
+
+    - void setKey(const std::string& key);
+
+    - bool checkKey(const std::string& key) const;
+
+(may want to store modes in a std::set<char> or use flags)
+
+✅ TOPIC: Set or view the channel topic (if topic mode allows)
+    - void setTopic(const std::string& topic);
+
+    - const std::string& getTopic() const;
+
+    - bool isTopicLocked() const;
+
+✅ INVITE: Allow an operator to invite a user to an invite-only channel
+    - void inviteUser(int clientFd);
+
+    - bool isInvited(int clientFd) const;
+
+✅ KICK: Remove a user from the channel by an operator
+    - bool isOperator(int clientFd) const;
+
+    - void kickUser(int targetFd);
+
+
