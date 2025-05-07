@@ -6,7 +6,7 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/02 10:25:46 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/06 11:03:50 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/07 18:57:05 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -106,7 +106,7 @@ bool Server::runServer()
                 acceptNewClient();
             // If it's a client socket and it's ready for reading (incoming data)
             else if (_fds[i].fd != _serverFd && _fds[i].revents && POLLIN)
-                recieveData(_fds[i].fd);
+                recieveClientData(_fds[i].fd);
         }
     }
     
@@ -146,65 +146,88 @@ void Server::acceptNewClient()
     std::cout << "New client connected: FD = " << clientFd << std::endl;
 }
 
-void Server::recieveData(int clientFd)
+
+//The receiveData method is responsible for:
+// Reading data from a client’s TCP socket (identified by clientFd).
+// Buffering partial or complete IRC commands (text ending with \r\n).
+// Processing complete commands by passing them to processCommand.
+// Handling errors, disconnections, and non-blocking I/O.
+
+
+void Server::recieveClientData(int clientFd)
 {
-    char buffer[512];
     size_t bytesRead;
-    
+    char buffer[1024];
+
     bytesRead = recv(clientFd, buffer, sizeof(buffer) - 1, 0);
+    
     if (bytesRead < 0)
-    {
-        if (errno == EAGAIN || errno == EWOULDBLOCK) {
-            return;
-        }
-        std::cerr << "Error reading from client FD " << clientFd << ": " << strerror(errno) << std::endl;
-        close(clientFd);
-        _clients.erase(clientFd);
-        for (std::vector<struct pollfd>::iterator it = _fds.begin(); it != _fds.end(); ++it) 
-        {
-            if (it->fd == clientFd)
-            {
-                _fds.erase(it);
-                break;
-            }
-        }
-        std::cout << "Client FD " << clientFd << " disconnected" << std::endl;
-        return;
-    }
     if (bytesRead == 0)
-    {
-        close(clientFd);
-        _clients.erase(clientFd);
-        for (std::vector<struct pollfd>::iterator it  = _fds.begin(); it != _fds.end(); it++)
-        {
-            if (it->fd == clientFd)
-            {
-                _fds.erase(it);
-                break;
-            }
-        }
-        std::cout << "Client FD " << clientFd << " disconnected" << std::endl;
-        return ;
-    }
+        //todo;
+        //todo
     buffer[bytesRead] = '\0';
-
-    _clients[clientFd].getBuffer() += buffer;
-
-    std::string::size_type pos;
-    while ((pos = _clients[clientFd].getBuffer().find("\r\n")) != std::string::npos)
-    {
-        std::string command = _clients[clientFd].getBuffer().substr(0, pos);
-        _clients[clientFd].getBuffer().erase(0, pos + 2); // Remove processed command
-        if (!command.empty())
-        {
-            processCommand(clientFd, command);
-        }
-    }
+        
 }
+
+// void Server::recieveClientData(int clientFd)
+// {
+//     char buffer[512];
+//     size_t bytesRead;
+    
+//     bytesRead = recv(clientFd, buffer, sizeof(buffer) - 1, 0);
+//     if (bytesRead < 0)
+//     {
+//         if (errno == EAGAIN || errno == EWOULDBLOCK) {
+//             return;
+//         }
+//         std::cerr << "Error reading from client FD " << clientFd << ": " << strerror(errno) << std::endl;
+//         close(clientFd);
+//         _clients.erase(clientFd);
+//         for (std::vector<struct pollfd>::iterator it = _fds.begin(); it != _fds.end(); ++it) 
+//         {
+//             if (it->fd == clientFd)
+//             {
+//                 _fds.erase(it);
+//                 break;
+//             }
+//         }
+//         std::cout << "Client FD " << clientFd << " disconnected" << std::endl;
+//         return;
+//     }
+//     if (bytesRead == 0)
+//     {
+//         close(clientFd);
+//         _clients.erase(clientFd);
+//         for (std::vector<struct pollfd>::iterator it  = _fds.begin(); it != _fds.end(); it++)
+//         {
+//             if (it->fd == clientFd)
+//             {
+//                 _fds.erase(it);
+//                 break;
+//             }
+//         }
+//         std::cout << "Client FD " << clientFd << " disconnected" << std::endl;
+//         return ;
+//     }
+//     buffer[bytesRead] = '\0';
+
+    // _clients[clientFd].getBuffer() += buffer;
+
+    // std::string::size_type pos;
+    // while ((pos = _clients[clientFd].getBuffer().find("\r\n")) != std::string::npos)
+    // {
+    //     std::string command = _clients[clientFd].getBuffer().substr(0, pos);
+    //     _clients[clientFd].getBuffer().erase(0, pos + 2); // Remove processed command
+    //     if (!command.empty())
+    //     {
+    //         processCommand(clientFd, command);
+    //     }
+    // }
+// }
 
 void Server::processCommand(int clientFd, const std::string& command)
 {
-    std::cout << "Received command from FD " << clientFd << ": " << command << std::endl;
+    std::cout << "Received from FD: " << clientFd << "; command: " << command << std::endl;
 
     // Parse command into tokens
     std::vector<std::string> tokens;
@@ -261,6 +284,13 @@ void Server::processCommand(int clientFd, const std::string& command)
         std::string reply = ":server 421 " + cmd + " :Unknown command\r\n";
         send(clientFd, reply.c_str(), reply.length(), 0);
     }
+    std::cout << "Token: " << tokens.size() << std::endl; 
+
+    // for (size_t i = 0; i < tokens.size(); i++)
+    // {
+    //     std::cout << "Token: " << tokens[i] << std::endl; 
+        
+    // }
 }
 
 //setters

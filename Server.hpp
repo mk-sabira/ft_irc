@@ -6,7 +6,7 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/02 10:10:44 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/06 11:00:51 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/07 18:36:35 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,9 +38,6 @@ private:
     std::string _password;
     struct sockaddr_in _serverAdd;
     std::vector<struct pollfd> _fds;
-
-    
-    
     
     class Client
     {
@@ -64,10 +61,14 @@ private:
             void setAuthenticated(bool authenticated) { _authenticated = authenticated; }
     };
     
-
     std::map<int, Client> _clients;
+    
+    
+    
+
+    
     void acceptNewClient();
-    void recieveData(int clientFd);
+    void recieveClientData(int clientFd);
     void processCommand(int clientFd, const std::string& cmd);
 public:
     Server(const std::string& port, const std::string& password);
