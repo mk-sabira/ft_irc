@@ -6,7 +6,7 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/02 10:10:44 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/07 18:36:35 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/08 13:58:45 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,6 +29,9 @@
 #include <netinet/in.h>   // For sockaddr_in structure, which is used for specifying socket addresses
 #include <poll.h>
 
+#include "colors.hpp"
+#include "Client.hpp"
+
 
 class Server
 {
@@ -38,38 +41,12 @@ private:
     std::string _password;
     struct sockaddr_in _serverAdd;
     std::vector<struct pollfd> _fds;
-    
-    class Client
-    {
-        private:
-            int _fd;
-            std::string _buffer;
-            std::string _nickname;
-            std::string _username;
-            bool _authenticated;
-        
-        public:
-            // Getter and Setter for _buffer
-            std::string& getBuffer() { return _buffer; }
-            void setBuffer(const std::string& buffer) { _buffer = buffer; }
-        
-            // Other getters and setters (e.g., for _fd and _authenticated)
-            int getFd() const { return _fd; }
-            void setFd(int fd) { _fd = fd; }
-        
-            bool isAuthenticated() const { return _authenticated; }
-            void setAuthenticated(bool authenticated) { _authenticated = authenticated; }
-    };
-    
     std::map<int, Client> _clients;
-    
-    
-    
-
     
     void acceptNewClient();
     void recieveClientData(int clientFd);
     void processCommand(int clientFd, const std::string& cmd);
+    void removeClient(int clientFd);
 public:
     Server(const std::string& port, const std::string& password);
     ~Server();
