@@ -6,7 +6,7 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/02 10:25:46 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/08 13:59:06 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/09 12:28:06 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,7 +19,7 @@ Server::~Server()
 }
 
 
-Server::Server(const std::string &port, const std::string &password):_serverFd(-1)
+Server::Server(const std::string &port, const std::string &password):_serverFd(-1), _serverName("irc.server")
 {
     std::istringstream ss(port);
     ss >> _port;
@@ -73,7 +73,6 @@ bool Server::serverSetup()
     serverPollFd.revents = 0;
     _fds.push_back(serverPollFd);
     
-    std::cout << _serverFd << std::endl;
     return (true);
 }
 
@@ -90,6 +89,7 @@ bool Server::serverSetup()
 // Dispatches data to the right handler (e.g., IRC commands like NICK, USER).
 bool Server::runServer()
 {
+    std::cout << GREEN << "IRC Server is running" << RESET << std::endl;
     while (true)
     {
         int pollCount = poll(&_fds[0], _fds.size(), -1);
@@ -109,8 +109,8 @@ bool Server::runServer()
                 recieveClientData(_fds[i].fd);
         }
     }
-    
-    return (false);
+    std::cout << "Server stopped running" << std::endl;
+    return (true);
 }
 
 void Server::acceptNewClient()
@@ -180,12 +180,12 @@ void Server::recieveClientData(int clientFd)
 
     while ((pos = clientInput.find("\r\n")) != std::string::npos)
     {
+        
         std::string command = clientInput.substr(0, pos); //// Extract command (from start to \r\n)
         clientInput.erase(0, pos + 2); //// Remove command and \r\n from buffer
         if (!command.empty())
         {
-            std::cout << "Received command from FD " << clientFd << ": " << command << std::endl;
-            processCommand(clientFd, command);
+            processCommand(clientFd, command); 
         }
     }
 }
@@ -194,75 +194,37 @@ void Server::recieveClientData(int clientFd)
 // sending appropriate IRC replies to complete the client’s connection handshake.
 void Server::processCommand(int clientFd, const std::string& command)
 {
-    std::cout << clientFd << command << std::endl;
+    std::vector<std::string> tokens;
+    std::string::size_type start = 0;
+    std::string::size_type end = command.find(' ');
+    if (end == std::string::npos)
+        tokens.push_back(command);
+    else
+        splitCommand(tokens, command, start, end);
+    if (tokens.empty())
+        return ;
+    if (tokens[0] == "PASS")
+    {
+        std::cout << "PASS cout: " << RED << tokens[0] << RESET << std::endl;
+        std::cout << "password: " << RED << tokens[1] << RESET << std::endl;
+        handlePass(clientFd, tokens);
+    }
+    else if( tokens[0] == "NICK")
+    {
+        std::cout << "NICK cout: " << BLUE << tokens[0] << RESET << std::endl;
+        handleNick(clientFd, tokens);
+    }
+    else if (tokens[0] == "USER")
+    {
+        std::cout << "USER cout: " << GREEN << tokens[0] << RESET << std::endl;
+        handleUser(clientFd, tokens);
+    }
+    else
+        sendReply(clientFd, "421 " + tokens[0] + " :Unknown command");
+    
 }
-// void Server::processCommand(int clientFd, const std::string& command)
-// {
-//     std::cout << "Received from FD: " << clientFd << "; command: " << command << std::endl;
 
-//     // Parse command into tokens
-//     std::vector<std::string> tokens;
-//     std::string::size_type start = 0;
-//     std::string::size_type end = command.find(' ');
-//     while (end != std::string::npos) {
-//         tokens.push_back(command.substr(start, end - start));
-//         start = end + 1;
-//         end = command.find(' ', start);
-//     }
-//     tokens.push_back(command.substr(start));
 
-//     if (tokens.empty()) {
-//         return;
-//     }
-
-//     std::string cmd = tokens[0];
-//     // Convert to uppercase for case-insensitive comparison
-//     for (std::string::size_type i = 0; i < cmd.length(); ++i) {
-//         cmd[i] = std::toupper(cmd[i]);
-//     }
-
-//     // Handle PASS command
-//     if (cmd == "PASS") {
-//         if (tokens.size() < 2) {
-//             std::string reply = ":server 461 PASS :Not enough parameters\r\n";
-//             send(clientFd, reply.c_str(), reply.length(), 0);
-//             return;
-//         }
-//         if (_clients[clientFd].isAuthenticated())
-//         {
-//             std::string reply = ":server 462 :You may not reregister\r\n";
-//             send(clientFd, reply.c_str(), reply.length(), 0);
-//             return;
-//         }
-//         if (tokens[1] == _password) {
-//             _clients[clientFd].setAuthenticated(true);
-//             std::cout << "Client FD " << clientFd << " authenticated" << std::endl;
-//         } else {
-//             std::string reply = ":server 464 :Password incorrect\r\n";
-//             send(clientFd, reply.c_str(), reply.length(), 0);
-//             close(clientFd);
-//             _clients.erase(clientFd);
-//             for (std::vector<struct pollfd>::iterator it = _fds.begin(); it != _fds.end(); ++it) {
-//                 if (it->fd == clientFd) {
-//                     _fds.erase(it);
-//                     break;
-//                 }
-//             }
-//             std::cout << "Client FD " << clientFd << " disconnected (wrong password)" << std::endl;
-//         }
-//     } else {
-//         // For testing, reject non-PASS commands
-//         std::string reply = ":server 421 " + cmd + " :Unknown command\r\n";
-//         send(clientFd, reply.c_str(), reply.length(), 0);
-//     }
-//     std::cout << "Token: " << tokens.size() << std::endl; 
-
-//     // for (size_t i = 0; i < tokens.size(); i++)
-//     // {
-//     //     std::cout << "Token: " << tokens[i] << std::endl; 
-        
-//     // }
-// }
 
 //setters
 void Server::setPort(int& port)

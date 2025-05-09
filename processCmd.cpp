@@ -1,48 +1,46 @@
-#include <iostream>      // For standard input/output (e.g., std::cout, std::cerr)
-#include <sys/socket.h>  // For socket functions (e.g., socket(), bind(), listen(), accept())
-#include <netinet/in.h>   // For sockaddr_in structure, which is used for specifying socket addresses
-#include <arpa/inet.h>    // For functions like inet_pton() to convert IP addresses
-#include <unistd.h>       // For the close() function to close file descriptors (like the socket)
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   processCmd.cpp                                     :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/05/09 10:59:00 by bmakhama          #+#    #+#             */
+/*   Updated: 2025/05/09 12:20:55 by bmakhama         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
 
-class Server {
-private:
-    int _server_fd;                    // Socket file descriptor (used to identify the socket)
-    struct sockaddr_in _server_addr;   // Holds the server's address information (IP address and port)
+#include "Server.hpp"
 
-public:
-    Server() : _server_fd(-1) {}        // Constructor: Initializes _server_fd to -1 (invalid)
-    ~Server() {
-        if (_server_fd != -1) {         // Destructor: Close the socket if it's valid
-            close(_server_fd);          // Closes the socket to free resources
-        }
-    }
-
-    bool setup(int port) {              // Setup method to create the socket and bind it to a port
-        // 1. Create the socket using socket() function
-        _server_fd = socket(AF_INET, SOCK_STREAM, 0); // AF_INET for IPv4, SOCK_STREAM for TCP
-        if (_server_fd == -1) {              // If socket creation fails
-            std::cerr << "Socket creation failed\n";  // Print an error message
-            return false;                  // Return false to indicate failure
-        }
-        std::cout << "Socket created successfully\n"; // Print success message
-        return true;                       // Return true to indicate success
-    }
-};
-
-int main() {
-    Server server;                        // Create a Server object
-    if (!server.setup(6667)) {             // Call the setup method with port 6667
-        return 1;                          // If setup fails, return 1 to indicate error
-    }
-    return 0;                              // Return 0 to indicate success
-}
-
-
-void Server::sendReply(int clientFd, const std::string& message)
+void Server::splitCommand(std::vector<std::string>& tokens, const std::string& command, std::string::size_type start, std::string::size_type end )
 {
-    std::string msg = message + "\r\n";
-    if (send(clientFd, msg.c_str(), msg.length(), 0) < 0)
-        std::cerr << "Error sending to FD " << clientFd << ": " << strerror(errno) << std::endl;
+    tokens.push_back(command.substr(start, end - start)); // Command name
+    start = end + 1;
+    if (tokens[0] == "USER")
+    {
+        // Split first three parameters
+        for (int i = 0; i < 3 && end != std::string::npos; ++i)
+        {
+            end = command.find(' ', start);
+            if (end == std::string::npos)
+                break;
+            tokens.push_back(command.substr(start, end - start));
+            start = end + 1;
+        }
+        // Take rest as realname
+        if (start < command.length())
+            tokens.push_back(command.substr(start));
+    }
+    else
+    {
+        // Split remaining parameters
+        while (end != std::string::npos)
+        {
+            end = command.find(' ', start);
+            tokens.push_back(command.substr(start, end == std::string::npos ? end : end - start));
+            start = end + 1;
+        }
+    }
 }
 
 void Server::handlePass(int clientFd, const std::vector<std::string>& tokens)
@@ -50,18 +48,18 @@ void Server::handlePass(int clientFd, const std::vector<std::string>& tokens)
     if (tokens.size() < 2)
     {
         sendReply(clientFd, ":" + _serverName + " 461 PASS :Not enough parameters");
-        return;
+        return ;
     }
     if (_clients[clientFd].isAuthenticated())
     {
         sendReply(clientFd, ":" + _serverName + " 462 :You may not reregister");
-        return;
+        return ;
     }
     if (tokens[1] != _password)
     {
         sendReply(clientFd, ":" + _serverName + " 464 :Password incorrect");
         removeClient(clientFd);
-        return;
+        return ;
     }
     _clients[clientFd].setAuthenticated(true);
     std::cout << "Client FD " << clientFd << " authenticated" << std::endl;
@@ -72,23 +70,23 @@ void Server::handleNick(int clientFd, const std::vector<std::string>& tokens)
     if (!_clients[clientFd].isAuthenticated())
     {
         sendReply(clientFd, ":" + _serverName + " 451 :You have not registered");
-        return;
+        return ;
     }
-    if (tokens.size() < 2 || tokens[1].empty())
+    if(tokens.size() < 2 || tokens[1].empty())
     {
         sendReply(clientFd, ":" + _serverName + " 431 :No nickname given");
         return;
     }
-    // Check nickname uniqueness
-    for (std::map<int, Client>::iterator it = _clients.begin(); it != _clients.end(); ++it)
+    for (std::map<int, Client>::iterator it = _clients.begin(); it != _clients.end(); it++)
     {
         if (it->first != clientFd && it->second.getNickname() == tokens[1])
         {
             sendReply(clientFd, ":" + _serverName + " 433 " + tokens[1] + " :Nickname is already in use");
-            return;
+            return ;
         }
     }
     _clients[clientFd].setNickname(tokens[1]);
+    
     // Check registration
     if (_clients[clientFd].isAuthenticated() && !_clients[clientFd].getNickname().empty() && !_clients[clientFd].getUsername().empty())
     {
@@ -102,23 +100,24 @@ void Server::handleNick(int clientFd, const std::vector<std::string>& tokens)
 
 void Server::handleUser(int clientFd, const std::vector<std::string>& tokens)
 {
-    if (!_clients[clientFd].isAuthenticated())
+    if(!_clients[clientFd].isAuthenticated())
     {
         sendReply(clientFd, ":" + _serverName + " 451 :You have not registered");
         return;
     }
-    if (tokens.size() < 5)
+    if(tokens.size() < 5)
     {
         sendReply(clientFd, ":" + _serverName + " 461 USER :Not enough parameters");
         return;
     }
-    if (!_clients[clientFd].getUsername().empty())
+    if(!_clients[clientFd].getUsername().empty())
     {
         sendReply(clientFd, ":" + _serverName + " 462 :You may not reregister");
         return;
     }
     _clients[clientFd].setUsername(tokens[1]);
     _clients[clientFd].setRealname(tokens[4]);
+    
     // Check registration
     if (_clients[clientFd].isAuthenticated() && !_clients[clientFd].getNickname().empty() && !_clients[clientFd].getUsername().empty())
     {
@@ -128,4 +127,11 @@ void Server::handleUser(int clientFd, const std::vector<std::string>& tokens)
         sendReply(clientFd, ":" + _serverName + " 003 " + _clients[clientFd].getNickname() + " :This server was created today");
         sendReply(clientFd, ":" + _serverName + " 004 " + _clients[clientFd].getNickname() + " :" + _serverName + " 1.0");
     }
+}
+
+void Server::sendReply(int clientFd, const std::string& message)
+{
+    std::string msg = message + "\r\n";
+    if (send(clientFd, msg.c_str(), msg.length(), 0) < 0)
+        std::cerr << "Error sending to FD " << clientFd << ": " << strerror(errno) << std::endl;
 }

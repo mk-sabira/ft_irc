@@ -6,7 +6,7 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/02 10:10:44 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/08 13:58:45 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/09 12:11:13 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,11 +42,20 @@ private:
     struct sockaddr_in _serverAdd;
     std::vector<struct pollfd> _fds;
     std::map<int, Client> _clients;
+    std::string _serverName;
     
     void acceptNewClient();
     void recieveClientData(int clientFd);
     void processCommand(int clientFd, const std::string& cmd);
     void removeClient(int clientFd);
+    void splitCommand(std::vector<std::string>& tokens, const std::string& command, std::string::size_type start, std::string::size_type end );
+
+    void handlePass(int clientFd, const std::vector<std::string>& tokens);
+    void handleNick(int clientFd, const std::vector<std::string>& tokens);
+    void handleUser(int clientFd, const std::vector<std::string>& tokens);
+    void sendReply(int clientFd, const std::string& message);
+
+
 public:
     Server(const std::string& port, const std::string& password);
     ~Server();

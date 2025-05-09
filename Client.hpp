@@ -6,7 +6,7 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/08 13:55:47 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/08 14:08:51 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/09 08:13:28 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,6 +20,8 @@ class Client
         std::string _buffer;
         std::string _nickname;
         std::string _username;
+        std::string _realname; //Stores the client’s realname (from USER).
+        bool _registered;
         bool _authenticated;
     
     public:
@@ -32,10 +34,18 @@ class Client
         void setBuffer(const std::string& buffer);
         void setFd(int fd);
         void setAuthenticated(bool authenticated);
+        void setNickname(const std::string& nickname);
+        void setUsername(const std::string& username);
+        void setRealname(const std::string& realname);
+        void setRegistered(bool registered);
         
         // Getter
         std::string& getBuffer();
         int getFd() const;
         bool isAuthenticated() const;
+        std::string& getNickname();
+        std::string& getUsername();
+        std::string& getRealname();
+        bool isRegistered() const;
         
 };

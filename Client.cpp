@@ -6,7 +6,7 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/08 13:59:47 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/08 14:07:58 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/09 08:12:46 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,6 +46,26 @@ bool Client::isAuthenticated() const
     return (_authenticated);
 }
 
+std::string &Client::getNickname()
+{
+    return (_nickname);
+}
+
+std::string &Client::getUsername()
+{
+    return (_username);
+}
+
+std::string &Client::getRealname()
+{
+    return (_realname);
+}
+
+bool Client::isRegistered() const
+{
+    return (_registered);
+}
+
 //setters
 void Client::setBuffer(const std::string& buffer)
 {
@@ -62,3 +82,22 @@ void Client::setAuthenticated(bool authenticated)
     _authenticated = authenticated;
 }
 
+void Client::setNickname(const std::string &nickname)
+{
+    _nickname  = nickname;
+}
+
+void Client::setUsername(const std::string &username)
+{
+    _username = username;
+}
+
+void Client::setRealname(const std::string &realname)
+{
+    _realname = realname;
+}
+
+void Client::setRegistered(bool registered)
+{
+    _registered = registered;
+}
