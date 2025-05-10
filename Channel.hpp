@@ -7,6 +7,9 @@
 #include <map>
 #include <set>
 
+#include "Client.hpp"
+
+
 
 class Channel
 {
@@ -20,7 +23,7 @@ class Channel
         bool         topicRestricted;    //topic can be changed? +t
         std::map<int, Client*> _users;   //map of users in the channel with their socket or id
         std::set<int>   _operators;      // set of users (socket, id) who are operators +o
-        std::set<int>   invited;        //which user have been invited, check access for invite-only channels
+        std::set<int>   _invited;        //which user have been invited, check access for invite-only channels
 
 
     public:
@@ -32,11 +35,21 @@ class Channel
         //-----Getters--------------
         std::set<int> getUserList() const;
         std::string getName() const;
+        std::string getKey() const;
+        std::string getTopic() const;
 
 
         //-----Setters--------------
+        // void addOperator(int clientFd);
+
+        //---------------helper functions---------------
+
+        bool isUser(int clientFd) const;
         bool isOperator(int clientFd) const;
-        void addOperator(int clientFd);
+        bool isInviteOnly() const;
+        bool isInvited(int clientFd) const;
+        bool isFull() const;
+        bool hasKey() const;
         void removeOperator(int clientFd);
 
         //--------------------------COMMANDS-----------------------------------------------
@@ -44,9 +57,10 @@ class Channel
         //--------JOIN---------
         bool canJoin(int clientFd, const std::string& key);
         void addUser(int clientFd) ;
-        bool isFull() const ;
-        bool isInviteOnly() const ;  
-        bool isInvited(int clientFd) const;
+        void addOperator(int clientFd) ;
+        // bool isFull() const ;
+        // bool isInviteOnly() const ;  
+        // bool isInvited(int clientFd) const;
 
         //---------MODE-----------
         void setMode(char mode, bool enable);
@@ -61,7 +75,7 @@ class Channel
 
         //----------INVITE--------------
         void inviteUser(int clientFd);
-        bool isInvited(int clientFd) const;
+        // bool isInvited(int clientFd) const;
 
         //-----------KICK------------------
         bool isOperator(int clientFd) const;
@@ -74,6 +88,9 @@ class Channel
         //-----------LIST------------------
     };
 
+
+
+void sendError(int userFd, int errorCode, const std::string& target, const std::string& message = "");
 
 
 #endif
