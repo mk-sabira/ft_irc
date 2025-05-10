@@ -1,0 +1,5 @@
+
+Client* getClientByNickname(const std::string& nick); // Return pointer or NULL
+void sendError(int fd, const std::string& code, const std::string& msg);
+void sendReply(int fd, const std::string& code, const std::string& msg);
+void sendMessage(int fd, const std::string& message);

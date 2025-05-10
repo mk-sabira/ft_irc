@@ -1,9 +1,9 @@
 /*
     channel Commands:
-        - JOIN
+        - JOIN ------------------
        // - PART
         - MODE
-        - TOPIC
+        - TOPIC ------------------
         //- NAMES
        // - LIST
         - INVITE

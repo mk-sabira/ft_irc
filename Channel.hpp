@@ -1,7 +1,8 @@
 #ifndef CHANNEL_HPP
 # define CHANNEL_HPP
 
-# define ERR_NOSUCHCHANNEL  403
+# define ERR_NOSUCHNICK  401 // No such nick
+# define ERR_NOSUCHCHANNEL  403 // No such channel
 # define ERR_KEYSET  467 // Channel key already set
 # define ERR_CHANNELISFULL  471 // full channel, Cannot join
 # define ERR_UNKNOWNMODE  472 // unknown mode char
@@ -11,6 +12,7 @@
 // --------- topic ---------
 # define ERR_NEEDMOREPARAMS  461  // not enough parameters
 # define ERR_NOTONCHANNEL  442  // not enough parameters
+# define ERR_USERONCHANNEL  443  // user is already on channel
 # define RPL_NOTOPIC  331  // No topic is set
 # define RPL_TOPIC  332  // set Topic
 # define ERR_CHANOPRIVSNEEDED  482  //not channel operator

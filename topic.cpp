@@ -12,6 +12,7 @@
     - Check User Is in Channel
 */
 
+
 // void Server::topicCommand(int userFd, const std::vector<std::string>& tokens)
 void topicCommand(int userFd, const std::vector<std::string>& tokens)
 {
