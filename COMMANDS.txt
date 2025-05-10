@@ -6,21 +6,20 @@
         - TOPIC ------------------
         //- NAMES
        // - LIST
-        - INVITE
-        - KICK
+        - INVITE ----------------------------------
+        - KICK-------------------------------
 */
 
 ✅ JOIN: add user to channel
-    - bool canJoin(int clientFd, const std::string& key);
-
-    - void addUser(int clientFd);
-    - void addOperator(int cliendFd);
-
-    - bool isFull() const;
-
-    - bool isInviteOnly() const;
-
-    - bool isInvited(int clientFd) const;
+/*
+    - Check if channel name is valid
+    - check channel existance
+    - If user already in the channel, do nothing
+    - chaeck the [invite-only, key"password", user limit]
+    - add user to the map
+    - broadcast JOIN to other users
+    - send topic and users list to the new user
+*/
 
 ✅ PART: remove user from channel
     - void removeUser(int clientFd);
@@ -40,11 +39,13 @@
 (may want to store modes in a std::set<char> or use flags)
 
 ✅ TOPIC: Set or view the channel topic (if topic mode allows)
-    - void setTopic(const std::string& topic);
+    topic:
+        TOPIC <channel> [<topic>]
 
-    - const std::string& getTopic() const;
+        - Validate Parameters
+        - Check Channel Exists
+        - Check User Is in Channel
 
-    - bool isTopicLocked() const;
 
 ✅ INVITE: Allow an operator to invite a user to an invite-only channel
     - void inviteUser(int clientFd);

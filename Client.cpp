@@ -55,6 +55,12 @@ bool Client::isRegistered() const
     return (_registered);
 }
 
+std::string Client::getPrefix() const
+{
+    return this->_nickname + "!" + this->_username + "@" + this->_hostname;
+}
+
+
 //setters
 void Client::setBuffer(const std::string& buffer)
 {
@@ -90,3 +96,5 @@ void Client::setRegistered(bool registered)
 {
     _registered = registered;
 }
+
+//-------------------------

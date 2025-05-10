@@ -1,21 +1,15 @@
 #include "Channel.hpp"
+#include "Server.hpp"
+#include "Client.hpp"
 
 Channel::Channel() {}
+Channel::Channel(const std::string& name) : _name(name) {}
 Channel& Channel::operator=(Channel& other) {}
 Channel::Channel(Channel& other) {}
 Channel::~Channel() {}
 
 
 
-// void Channel::addOperator(int clientFd)
-// {
-//     this->_operators.insert(clientFd);
-// }
-
-void Channel::removeOperator(int clientFd)
-{
-    this->_operators.erase(clientFd);
-}
 //----------------- Getters -----------------------------
 
 std::string Channel::getName() const
@@ -33,7 +27,7 @@ std::string Channel::getKey() const
     return this->_key;
 }
 
-std::set<int> Channel::getUserList() const
+std::set<int> Channel::getUserFds() const
 {
     std::set<int>   usersFds;
 
@@ -42,6 +36,21 @@ std::set<int> Channel::getUserList() const
         usersFds.insert(it->first);
     return usersFds;
 }
+
+std::vector<std::string>    Channel::getNicknamesWithPrefixes() const
+{
+    std::vector<std::string> listOfUsers;
+    for (std::map<int, Client*>::const_iterator it = _users.begin(); it != _users.end(); ++it) {
+        Client* client = it->second;
+        std::string prefix;
+
+        if (isOperator(client->getFd()))
+            prefix = "@";
+        listOfUsers.push_back(prefix + client->getNickname());
+    }
+    return listOfUsers;
+}
+
 
         //---------------helper functions---------------
 
@@ -86,6 +95,14 @@ bool Channel::isFull() const
     return true;
 }
 
+// void Channel::broadcastToAll(const std::string& message, Server* server)
+// {
+//     for (std::map<int, Client*>::iterator it = _users.begin(); it != _users.end(); ++it)
+//     {
+//         int clientFd = it->first;
+//         server->sendMessage(clientFd, message);
+//     }
+// }
 //-------------------- JOIN --------------------------
 bool Channel::canJoin(int clientFd, const std::string& key)
 {
@@ -123,9 +140,27 @@ std::string Channel::getTopic() const {
     return this->_topic;
 }
 
+std::string Channel::getClientPrefix(int fd) const
+{
+    if (isOperator(fd))
+        return ("@");
+    return ("");
+}
+
 
 
 void Channel::addOperator(int clientFd)
 {
     this->_operators.insert(clientFd);
+}
+
+void Channel::addInvite(int clientFd)
+{
+    this->_invited.insert(clientFd);
+}
+
+
+void Channel::removeUser(int clientFd)
+{
+    this->_users.erase(clientFd);
 }

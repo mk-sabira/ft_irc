@@ -36,5 +36,7 @@ class Client
         std::string& getUsername();
         std::string& getRealname();
         bool isRegistered() const;
+        //-----------
+        std::string    getPrefix()const;
         
 };
