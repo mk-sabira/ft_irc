@@ -1,4 +1,4 @@
-#include "channel.hpp"
+#include "Channel.hpp"
 
 /*
 - Check if channel name is valid

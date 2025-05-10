@@ -87,6 +87,14 @@ bool Channel::isFull() const
 }
 
 //-------------------- JOIN --------------------------
+bool Channel::canJoin(int clientFd, const std::string& key)
+{
+    if (this->hasKey() && this->getKey() != key)
+        return false;
+    return true;
+
+}
+
 void Channel::addUser(int clientFd)
 {
     Client* client = getClientByFd(clientFd); // client functions
@@ -97,12 +105,22 @@ void Channel::addUser(int clientFd)
     _invited.erase(clientFd);
 }
 
-bool Channel::canJoin(int clientFd, const std::string& key)
-{
-    if (this->hasKey() && this->getKey() != key)
-        return false;
-    return true;
+//------------ TOPIC -----------------
 
+bool Channel::isTopicRestricted() const {
+    return this->_topicRestricted;
+}
+
+void Channel::setTopic(const std::string& topic) {
+    this->_topic = topic;
+}
+
+void Channel::clearTopic() {
+    this->_topic.clear();
+}
+
+std::string Channel::getTopic() const {
+    return this->_topic;
 }
 
 

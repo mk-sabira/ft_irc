@@ -1,6 +1,20 @@
 #ifndef CHANNEL_HPP
 # define CHANNEL_HPP
 
+# define ERR_NOSUCHCHANNEL  403
+# define ERR_KEYSET  467 // Channel key already set
+# define ERR_CHANNELISFULL  471 // full channel, Cannot join
+# define ERR_UNKNOWNMODE  472 // unknown mode char
+# define ERR_INVITEONLYCHAN  473 // not invited, Cannot join
+# define ERR_BADCHANNELKEY  475 // wrong key, Cannot join
+
+// --------- topic ---------
+# define ERR_NEEDMOREPARAMS  461  // not enough parameters
+# define ERR_NOTONCHANNEL  442  // not enough parameters
+# define RPL_NOTOPIC  331  // No topic is set
+# define RPL_TOPIC  332  // set Topic
+# define ERR_CHANOPRIVSNEEDED  482  //not channel operator
+
 #include <iostream>
 #include <string>
 #include <stdbool.h>
@@ -20,7 +34,7 @@ class Channel
         std::string  _key;   //optional password to join the channel
         size_t       userLimit;  //max num of users in the channel
         bool         inviteOnly; //invite onlu mode +i
-        bool         topicRestricted;    //topic can be changed? +t
+        bool         _topicRestricted;    //topic can be changed? +t
         std::map<int, Client*> _users;   //map of users in the channel with their socket or id
         std::set<int>   _operators;      // set of users (socket, id) who are operators +o
         std::set<int>   _invited;        //which user have been invited, check access for invite-only channels
@@ -40,6 +54,7 @@ class Channel
 
 
         //-----Setters--------------
+        void setTopic(const std::string& topic);
         // void addOperator(int clientFd);
 
         //---------------helper functions---------------
@@ -70,8 +85,8 @@ class Channel
 
         //---------------TOPIC----------
         void setTopic(const std::string& topic);
-        const std::string& getTopic() const;
-        bool isTopicLocked() const;
+        void clearTopic();
+        bool isTopicRestricted() const;
 
         //----------INVITE--------------
         void inviteUser(int clientFd);
