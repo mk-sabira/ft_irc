@@ -6,7 +6,7 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/02 10:25:46 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/09 12:28:06 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/11 14:31:53 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -76,17 +76,6 @@ bool Server::serverSetup()
     return (true);
 }
 
-
-// The server waits for new client connections
-// Accepts them
-// Monitors existing clients for new messages or disconnections
-// Handles input/output events
-
-// Waits for activity using select() (or poll() / epoll()).
-// Accepts new client connections when a client tries to connect.
-// Reads incoming messages from already-connected clients.
-// Handles disconnections if a client closes the connection or crashes.
-// Dispatches data to the right handler (e.g., IRC commands like NICK, USER).
 bool Server::runServer()
 {
     std::cout << GREEN << "IRC Server is running" << RESET << std::endl;
@@ -101,10 +90,8 @@ bool Server::runServer()
 
         for (size_t i = 0; i < _fds.size(); i++)
         {
-            // If it's the server socket and it's ready for reading (incoming connection)
             if (_fds[i].fd == _serverFd && _fds[i].revents & POLLIN)
                 acceptNewClient();
-            // If it's a client socket and it's ready for reading (incoming data)
             else if (_fds[i].fd != _serverFd && _fds[i].revents & POLLIN)
                 recieveClientData(_fds[i].fd);
         }
@@ -146,20 +133,12 @@ void Server::acceptNewClient()
     std::cout << "New client connected: FD = " << clientFd << std::endl;
 }
 
-
-//The receiveData method is responsible for:
-// Reading data from a client’s TCP socket (identified by clientFd).
-// Buffering partial or complete IRC commands (text ending with \r\n).
-// Processing complete commands by passing them to processCommand.
-// Handling errors, disconnections, and non-blocking I/O.
-//std::cerr << "Error reading from client FD " << clientFd << ": " << strerror(errno) << std::endl;
-
 void Server::recieveClientData(int clientFd)
 {
     size_t bytesRead;
     char buffer[1024];
 
-    bytesRead = recv(clientFd, buffer, sizeof(buffer), 0);
+    bytesRead = recv(clientFd, buffer, sizeof(buffer) - 1, 0);
     
     if (bytesRead < 0)
     {
@@ -174,8 +153,10 @@ void Server::recieveClientData(int clientFd)
         removeClient(clientFd);
         return ;
     }
+    buffer[bytesRead] = '\0';
+    
     _clients[clientFd].getBuffer().append(buffer, bytesRead);
-    std::string clientInput = _clients[clientFd].getBuffer();
+    std::string& clientInput = _clients[clientFd].getBuffer();
     size_t pos;
 
     while ((pos = clientInput.find("\r\n")) != std::string::npos)
@@ -185,13 +166,14 @@ void Server::recieveClientData(int clientFd)
         clientInput.erase(0, pos + 2); //// Remove command and \r\n from buffer
         if (!command.empty())
         {
+            std::cout << "Received command from FD " << clientFd << ": " << command << std::endl;
             processCommand(clientFd, command); 
         }
+        else
+            std::cout << "Empty command ignored from FD " << clientFd << std::endl;
     }
 }
 
-//Goal: Implement processCommand to handle PASS, NICK, and USER commands, 
-// sending appropriate IRC replies to complete the client’s connection handshake.
 void Server::processCommand(int clientFd, const std::string& command)
 {
     std::vector<std::string> tokens;
@@ -205,22 +187,32 @@ void Server::processCommand(int clientFd, const std::string& command)
         return ;
     if (tokens[0] == "PASS")
     {
-        std::cout << "PASS cout: " << RED << tokens[0] << RESET << std::endl;
         std::cout << "password: " << RED << tokens[1] << RESET << std::endl;
         handlePass(clientFd, tokens);
     }
     else if( tokens[0] == "NICK")
     {
-        std::cout << "NICK cout: " << BLUE << tokens[0] << RESET << std::endl;
+        std::cout << "NICK: " << BLUE << tokens[1] << RESET << std::endl;
         handleNick(clientFd, tokens);
     }
     else if (tokens[0] == "USER")
     {
-        std::cout << "USER cout: " << GREEN << tokens[0] << RESET << std::endl;
+        std::cout << "USER name: " << GREEN << tokens[1] << RESET << std::endl;
+        std::cout << "Real name: " << GREEN << tokens[4] << RESET << std::endl;
         handleUser(clientFd, tokens);
+    }
+    else if (tokens[0] == "PRIVMSG")
+    {
+        std::cout << "New input: " << tokens[0] << " Second: " << tokens[1] << std::endl;
+        handlePrivmsg(clientFd, tokens);
+    }
+    else if (tokens[0] == "JOIN")
+    {
+        // handleJoin(clientFd, tokens);
     }
     else
         sendReply(clientFd, "421 " + tokens[0] + " :Unknown command");
+        
     
 }
 

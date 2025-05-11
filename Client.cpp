@@ -6,34 +6,34 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/08 13:59:47 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/09 08:12:46 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/11 11:10:32 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Client.hpp"
 
-Client::Client(){}
+Client::Client() {}
 
-Client::~Client(){}
+Client::~Client() {}
 
 Client::Client(const Client &copy)
 {
-    (void) copy;
-    //all the atrubutes must be copied
+    (void)copy;
+    // all the atrubutes must be copied
 }
 
 Client &Client::operator=(const Client &obj)
 {
-    (void) obj;
+    (void)obj;
     // TODO: insert return statement here
     // must be reassigned
     return (*this);
 }
 
-//getters
-std::string& Client::getBuffer()
-{ 
-    return _buffer; 
+// getters
+std::string &Client::getBuffer()
+{
+    return _buffer;
 }
 
 int Client::getFd() const
@@ -66,8 +66,8 @@ bool Client::isRegistered() const
     return (_registered);
 }
 
-//setters
-void Client::setBuffer(const std::string& buffer)
+// setters
+void Client::setBuffer(const std::string &buffer)
 {
     _buffer = buffer;
 }
@@ -84,7 +84,7 @@ void Client::setAuthenticated(bool authenticated)
 
 void Client::setNickname(const std::string &nickname)
 {
-    _nickname  = nickname;
+    _nickname = nickname;
 }
 
 void Client::setUsername(const std::string &username)
