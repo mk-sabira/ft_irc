@@ -6,7 +6,7 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/02 10:10:44 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/12 10:03:42 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/13 11:19:34 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,11 +51,14 @@ private:
     void splitCommand(std::vector<std::string>& tokens, const std::string& command, std::string::size_type start, std::string::size_type end );
 
     void handlePass(int clientFd, const std::vector<std::string>& tokens);
+    
     void handleNick(int clientFd, const std::vector<std::string>& tokens);
+    bool validateNick(const std::string& nick, std::string& errorMsg);
+    
     void handleUser(int clientFd, const std::vector<std::string>& tokens);
+    bool validateUser(const std::vector<std::string>& tokens, std::string& errorMsg);
     void sendReply(int clientFd, const std::string& message);
     void handlePrivmsg(int clientFd, const std::vector<std::string>& tokens);
-    void sendPrivatemsg(int targetFd, const std::string& message);
 
     void handlePing(int clientFd, const std::vector<std::string>& tokens);
 public:

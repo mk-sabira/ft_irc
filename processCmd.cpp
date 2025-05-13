@@ -6,64 +6,87 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/09 10:59:00 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/13 07:49:48 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/13 11:21:25 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Server.hpp"
 
-void Server::splitCommand(std::vector<std::string>& tokens, const std::string& command, std::string::size_type start, std::string::size_type end )
+// void Server::splitCommand(std::vector<std::string>& tokens, const std::string& command, std::string::size_type start, std::string::size_type end )
+// {
+//     tokens.push_back(command.substr(start, end - start)); // Command name
+//     start = end + 1;
+//     if (tokens[0] == "USER")
+//     {
+//         // Split first three parameters
+//         for (int i = 0; i < 3 && end != std::string::npos; ++i)
+//         {
+//             end = command.find(' ', start);
+//             if (end == std::string::npos)
+//                 break;
+//             tokens.push_back(command.substr(start, end - start));
+//             start = end + 1;
+//         }
+//         // Take rest as realname
+//         if (start < command.length())
+//             tokens.push_back(command.substr(start));
+//     }
+//     else if (tokens[0] == "PRIVMSG")
+//     {
+//         end = command.find(' ', start);
+//         if (end != std::string::npos)
+//         {
+//             tokens.push_back(command.substr(start, end - start)); // Target
+//             start = end + 1;
+//             if (start < command.length())
+//                 tokens.push_back(command.substr(start)); // Message (includes ':')
+//         }
+//     }
+//     else
+//     {
+//         // Split remaining parameters
+//         while (end != std::string::npos)
+//         {
+//             end = command.find(' ', start);
+//             tokens.push_back(command.substr(start, end == std::string::npos ? end : end - start));
+//             start = end + 1;
+//         }
+//     }
+// }
+
+
+void Server::splitCommand(std::vector<std::string>& tokens, const std::string& command, std::string::size_type start, std::string::size_type end)
 {
     tokens.push_back(command.substr(start, end - start)); // Command name
     start = end + 1;
-    if (tokens[0] == "USER")
+
+    while (start < command.length())
     {
-        // Split first three parameters
-        for (int i = 0; i < 3 && end != std::string::npos; ++i)
+        if (command[start] == ':')
         {
-            end = command.find(' ', start);
-            if (end == std::string::npos)
-                break;
-            tokens.push_back(command.substr(start, end - start));
-            start = end + 1;
+            tokens.push_back(command.substr(start)); // Take rest as single token
+            break;
         }
-        // Take rest as realname
-        if (start < command.length())
-            tokens.push_back(command.substr(start));
-    }
-    else if (tokens[0] == "PRIVMSG")
-    {
         end = command.find(' ', start);
-        if (end != std::string::npos)
+        if (end == std::string::npos)
         {
-            tokens.push_back(command.substr(start, end - start)); // Target
-            start = end + 1;
-            if (start < command.length())
-                tokens.push_back(command.substr(start)); // Message (includes ':')
+            tokens.push_back(command.substr(start));
+            break;
         }
-    }
-    else
-    {
-        // Split remaining parameters
-        while (end != std::string::npos)
-        {
-            end = command.find(' ', start);
-            tokens.push_back(command.substr(start, end == std::string::npos ? end : end - start));
-            start = end + 1;
-        }
+        tokens.push_back(command.substr(start, end - start));
+        start = end + 1;
     }
 }
-
 void Server::handlePass(int clientFd, const std::vector<std::string>& tokens)
 {
-    if (tokens.size() < 2)
+    if (tokens.size() < 2 || tokens[1].empty())
     {
         sendReply(clientFd, " 461 PASS :Not enough parameters");
         return ;
     }
     if (_clients[clientFd].isAuthenticated())
     {
-        sendReply(clientFd, " 462 :You may not reregister");
+        sendReply(clientFd, " 462 :Unauthorized command (already registered)");
         return ;
     }
     if (tokens[1] != _password)
@@ -76,20 +99,51 @@ void Server::handlePass(int clientFd, const std::vector<std::string>& tokens)
     // std::cout << "Client FD " << clientFd << " authenticated" << std::endl;
 }
 
-
-
+bool Server::validateNick(const std::string& nick, std::string& errorMsg)
+{
+    // std::cout<< nick << ":size " << nick.size() << std::endl;
+    if (nick.empty() || nick.length() > 9)
+    {
+        errorMsg = "432 " + nick + " :Erroneous nickname";
+        return false;
+    }
+    if (!isalpha(nick[0]) && nick[0] != '[' && nick[0] != ']' && nick[0] != '\\' && 
+        nick[0] != '`' && nick[0] != '_' && nick[0] != '^' && nick[0] != '{' && 
+        nick[0] != '|' && nick[0] != '}')
+    {
+        errorMsg = "432 " + nick + " :Erroneous nickname";
+        return false;
+    }
+    for (size_t i = 1; i < nick.length(); ++i)
+    {
+        if (!isalnum(nick[i]) && nick[i] != '-' && nick[i] != '[' && nick[i] != ']' && 
+            nick[i] != '\\' && nick[i] != '`' && nick[i] != '_' && nick[i] != '^' && 
+            nick[i] != '{' && nick[i] != '|' && nick[i] != '}')
+        {
+            errorMsg = "432 " + nick + " :Erroneous nickname";
+            return false;
+        }
+    }
+    return true;
+}
 
 void Server::handleNick(int clientFd, const std::vector<std::string>& tokens)
 {
-    if (!_clients[clientFd].isAuthenticated())
-    {
-        sendReply(clientFd, "451 :You have not registered");
-        return;
-    }
     if (tokens.size() < 2 || tokens[1].empty())
     {
         sendReply(clientFd, "431 :No nickname given");
         return;
+    }
+    std::string errorMess;
+    if ( tokens.size() != 2)
+    {
+        sendReply(clientFd, "432 " " :Erroneous nickname");
+        return ;
+    }
+    if (!validateNick(tokens[1], errorMess))
+    {
+        sendReply(clientFd, errorMess);
+        return ;
     }
     for (std::map<int, Client>::iterator it = _clients.begin(); it != _clients.end(); ++it)
     {
@@ -110,22 +164,72 @@ void Server::handleNick(int clientFd, const std::vector<std::string>& tokens)
     }
 }
 
+bool Server::validateUser(const std::vector<std::string>& tokens, std::string& errorMsg)
+{
+    if (tokens.size() < 5)
+    {
+        errorMsg = "461 USER :Not enough parameters";
+        return false;
+    }
+    const std::string& user = tokens[1];
+    const std::string& mode = tokens[2];
+    const std::string& realname = tokens[4];
+
+    if (user.empty() || user.find(' ') != std::string::npos)
+    {
+        errorMsg = "461 USER :Not enough parameters";
+        return false;
+    }
+    for (size_t i = 0; i < user.length(); ++i)
+    {
+        if (!isalnum(user[i]) && user[i] != '_' && user[i] != '-')
+        {
+            errorMsg = "461 USER :Not enough parameters";
+            return false;
+        }
+    }
+
+    // Validate mode: numeric, 0, 4, 8, or 12 //discover more about it
+    int modeVal = 0;
+    try {
+        modeVal = std::stoi(mode);
+    }
+    catch (...)
+    { 
+        errorMsg = "461 USER :Not enough parameters"; 
+        return false; 
+    }
+    if (modeVal != 0 && modeVal != 4 && modeVal != 8 && modeVal != 12)
+    {
+        errorMsg = "461 USER :Not enough parameters";
+        return false;
+    }
+
+    if (realname.empty())
+    {
+        errorMsg = "461 USER :Not enough parameters";
+        return false;
+    }
+    if (realname.find(' ') != std::string::npos && realname[0] != ':')
+    {
+        errorMsg = "461 USER :Not enough parameters";
+        return false;
+    }
+
+    return true;
+}
 
 void Server::handleUser(int clientFd, const std::vector<std::string>& tokens)
 {
-    if (!_clients[clientFd].isAuthenticated())
-    {
-        sendReply(clientFd, "451 :You have not registered");
-        return;
-    }
-    // if (tokens.size() < 5)
+    // if (_clients[clientFd].isRegistered())
     // {
-    //     sendReply(clientFd, "461 USER :Not enough parameters");
+    //     sendReply(clientFd, "462 :Unauthorized command (already registered)");
     //     return;
     // }
-    if (!_clients[clientFd].getUsername().empty())
+    std::string errorMsg;
+    if (!validateUser(tokens, errorMsg))
     {
-        sendReply(clientFd, "462 :You may not reregister");
+        sendReply(clientFd, errorMsg);
         return;
     }
     _clients[clientFd].setUsername(tokens[1]);

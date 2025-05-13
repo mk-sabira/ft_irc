@@ -6,7 +6,7 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/02 10:25:46 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/13 07:46:47 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/13 11:24:22 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -192,25 +192,25 @@ void Server::processCommand(int clientFd, const std::string& command)
         splitCommand(tokens, command, start, end);
     if (tokens.empty())
         return ;
-    if (tokens[0] == "PASS")
+    if (tokens[0] == "PASS" || tokens[0] == "pass")
     {
         // std::cout << "password: " << RED << tokens[1] << RESET << std::endl;
         handlePass(clientFd, tokens);
     }
-    else if( tokens[0] == "NICK")
+    else if( tokens[0] == "NICK" || tokens[0] == "nick")
     {
         // std::cout << "NICK: " << BLUE << tokens[1] << RESET << std::endl;
         handleNick(clientFd, tokens);
     }
-    else if (tokens[0] == "USER")
+    else if (tokens[0] == "USER" || tokens[0] == "user")
     {
         // std::cout << "USER name: " << GREEN << tokens[1] << RESET << std::endl;
         // std::cout << "Real name: " << GREEN << tokens[4] << RESET << std::endl;
         handleUser(clientFd, tokens);
     }
-    else if (tokens[0] == "PING")
+    else if (tokens[0] == "PING" || tokens[0] == "ping")
     {
-        // std::cout << "PING cout: " << YELLOW << command << RESET << std::endl;
+        std::cout << "PING cout: " << YELLOW << command << RESET << std::endl;
         handlePing(clientFd, tokens);
     }
     else if (tokens[0] == "PRIVMSG")
@@ -218,7 +218,10 @@ void Server::processCommand(int clientFd, const std::string& command)
         handlePrivmsg(clientFd, tokens);
     }
     else
+    {
+        std::cout << "Unknown cout: " << YELLOW << tokens[0] << RESET << std::endl;
         sendReply(clientFd, "421 " + tokens[0] + " :Unknown command");
+    }
         
     
 }
