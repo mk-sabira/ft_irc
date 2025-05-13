@@ -6,7 +6,7 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/08 13:59:47 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/11 11:10:32 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/13 07:47:32 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,7 +25,6 @@ Client::Client(const Client &copy)
 Client &Client::operator=(const Client &obj)
 {
     (void)obj;
-    // TODO: insert return statement here
     // must be reassigned
     return (*this);
 }

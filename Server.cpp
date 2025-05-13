@@ -6,7 +6,7 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/02 10:25:46 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/11 14:31:53 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/13 07:46:47 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,14 +29,6 @@ Server::Server(const std::string &port, const std::string &password):_serverFd(-
 
 }
 
-// Create a socket using the system call for IPv4 and TCP.
-// Set up a sockaddr_in structure to define:
-// IP address: accept any (INADDR_ANY)
-// Port number: use the given port (e.g. 6667)
-// Address family: IPv4
-// Bind the socket to the address and port so the OS knows you want to listen there.
-// Start listening on the socket
-
 bool Server::serverSetup()
 {
     _serverFd = socket(AF_INET, SOCK_STREAM, 0);
@@ -46,6 +38,14 @@ bool Server::serverSetup()
         return (false);
     }
 
+    //new line -> Enable SO_REUSEADDR
+    int opt = 1;
+    if (setsockopt(_serverFd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
+    {
+        std::cerr << "Setsockopt failed" << std::endl;
+        close(_serverFd);
+        return false;
+    }
     if (fcntl(_serverFd, F_SETFL, O_NONBLOCK) == -1)
     {
         std::cout << "Failed to set non-blocking mode" << std::endl;
@@ -94,6 +94,7 @@ bool Server::runServer()
                 acceptNewClient();
             else if (_fds[i].fd != _serverFd && _fds[i].revents & POLLIN)
                 recieveClientData(_fds[i].fd);
+            _fds[i].revents = 0; //new line
         }
     }
     std::cout << "Server stopped running" << std::endl;
@@ -130,20 +131,24 @@ void Server::acceptNewClient()
     client.setFd(clientFd);
     client.setAuthenticated(false);
     _clients[clientFd] = client;
-    std::cout << "New client connected: FD = " << clientFd << std::endl;
+    std::cout << CYAN << "New client connected: FD = " << clientFd << RESET << std::endl;
 }
 
 void Server::recieveClientData(int clientFd)
 {
-    size_t bytesRead;
+    int bytesRead;
     char buffer[1024];
 
+    // std::cout << "Checking FD " << clientFd << " for data" << std::endl;
     bytesRead = recv(clientFd, buffer, sizeof(buffer) - 1, 0);
     
     if (bytesRead < 0)
     {
         if (errno == EAGAIN || errno == EWOULDBLOCK)
+        {
+            std::cout << "No data on FD " << clientFd << " (EAGAIN)" << std::endl;   
             return ;
+        }
         std::cerr << "Error reading from client FD: " << clientFd << ": " << strerror(errno) << std::endl;
         removeClient(clientFd);
         return ;
@@ -156,19 +161,21 @@ void Server::recieveClientData(int clientFd)
     buffer[bytesRead] = '\0';
     
     _clients[clientFd].getBuffer().append(buffer, bytesRead);
+
     std::string& clientInput = _clients[clientFd].getBuffer();
     size_t pos;
 
-    while ((pos = clientInput.find("\r\n")) != std::string::npos)
+    while ((pos = clientInput.find('\n')) != std::string::npos)
     {
-        
-        std::string command = clientInput.substr(0, pos); //// Extract command (from start to \r\n)
-        clientInput.erase(0, pos + 2); //// Remove command and \r\n from buffer
+        std::string command = clientInput.substr(0, pos);
+
+        if (!command.empty() && command[command.length() - 1] == '\r')
+            command.erase(command.length() - 1);
+
+        clientInput.erase(0, pos + 1);
+
         if (!command.empty())
-        {
-            std::cout << "Received command from FD " << clientFd << ": " << command << std::endl;
-            processCommand(clientFd, command); 
-        }
+            processCommand(clientFd, command);
         else
             std::cout << "Empty command ignored from FD " << clientFd << std::endl;
     }
@@ -187,28 +194,28 @@ void Server::processCommand(int clientFd, const std::string& command)
         return ;
     if (tokens[0] == "PASS")
     {
-        std::cout << "password: " << RED << tokens[1] << RESET << std::endl;
+        // std::cout << "password: " << RED << tokens[1] << RESET << std::endl;
         handlePass(clientFd, tokens);
     }
     else if( tokens[0] == "NICK")
     {
-        std::cout << "NICK: " << BLUE << tokens[1] << RESET << std::endl;
+        // std::cout << "NICK: " << BLUE << tokens[1] << RESET << std::endl;
         handleNick(clientFd, tokens);
     }
     else if (tokens[0] == "USER")
     {
-        std::cout << "USER name: " << GREEN << tokens[1] << RESET << std::endl;
-        std::cout << "Real name: " << GREEN << tokens[4] << RESET << std::endl;
+        // std::cout << "USER name: " << GREEN << tokens[1] << RESET << std::endl;
+        // std::cout << "Real name: " << GREEN << tokens[4] << RESET << std::endl;
         handleUser(clientFd, tokens);
+    }
+    else if (tokens[0] == "PING")
+    {
+        // std::cout << "PING cout: " << YELLOW << command << RESET << std::endl;
+        handlePing(clientFd, tokens);
     }
     else if (tokens[0] == "PRIVMSG")
     {
-        std::cout << "New input: " << tokens[0] << " Second: " << tokens[1] << std::endl;
         handlePrivmsg(clientFd, tokens);
-    }
-    else if (tokens[0] == "JOIN")
-    {
-        // handleJoin(clientFd, tokens);
     }
     else
         sendReply(clientFd, "421 " + tokens[0] + " :Unknown command");

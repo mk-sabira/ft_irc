@@ -6,7 +6,7 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/02 10:10:44 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/11 13:30:07 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/12 10:03:42 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -55,8 +55,9 @@ private:
     void handleUser(int clientFd, const std::vector<std::string>& tokens);
     void sendReply(int clientFd, const std::string& message);
     void handlePrivmsg(int clientFd, const std::vector<std::string>& tokens);
+    void sendPrivatemsg(int targetFd, const std::string& message);
 
-
+    void handlePing(int clientFd, const std::vector<std::string>& tokens);
 public:
     Server(const std::string& port, const std::string& password);
     ~Server();

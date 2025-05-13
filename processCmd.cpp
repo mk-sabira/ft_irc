@@ -6,7 +6,7 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/09 10:59:00 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/11 14:05:00 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/13 07:44:34 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -73,7 +73,7 @@ void Server::handlePass(int clientFd, const std::vector<std::string>& tokens)
         return ;
     }
     _clients[clientFd].setAuthenticated(true);
-    std::cout << "Client FD " << clientFd << " authenticated" << std::endl;
+    // std::cout << "Client FD " << clientFd << " authenticated" << std::endl;
 }
 
 
@@ -118,11 +118,11 @@ void Server::handleUser(int clientFd, const std::vector<std::string>& tokens)
         sendReply(clientFd, "451 :You have not registered");
         return;
     }
-    if (tokens.size() < 5)
-    {
-        sendReply(clientFd, "461 USER :Not enough parameters");
-        return;
-    }
+    // if (tokens.size() < 5)
+    // {
+    //     sendReply(clientFd, "461 USER :Not enough parameters");
+    //     return;
+    // }
     if (!_clients[clientFd].getUsername().empty())
     {
         sendReply(clientFd, "462 :You may not reregister");
@@ -139,13 +139,6 @@ void Server::handleUser(int clientFd, const std::vector<std::string>& tokens)
         sendReply(clientFd, "004 " + _clients[clientFd].getNickname() + " :" + _serverName + " 1.0");
     }
 }
-
-// void Server::sendReply(int clientFd, const std::string& message)
-// {
-//     std::string msg = message + "\r\n";
-//     if (send(clientFd, msg.c_str(), msg.length(), 0) < 0)
-//         std::cerr << "Error sending to FD " << clientFd << ": " << strerror(errno) << std::endl;
-// }
 
 void Server::sendReply(int clientFd, const std::string& message)
 {
@@ -164,41 +157,58 @@ void Server::sendReply(int clientFd, const std::string& message)
     }
 }
 
-void Server::handlePrivmsg(int clientFd, const std::vector<std::string> &tokens)
+// void Server::sendPrivatemsg(int targetFd, const std::string& message)
+// {
+//     std::string msg = message + "\r\n";
+//     std::cout << "Sending to FD " << targetFd << ": " << msg;
+//     int bytesSent = send(targetFd, msg.c_str(), msg.length(), 0);
+//     if (bytesSent < 0)
+//     {
+//         if (errno == EAGAIN || errno == EWOULDBLOCK)
+//             std::cout << "Send to FD " << targetFd << " blocked, will retry" << std::endl;
+//         else
+//             std::cerr << "Error sending to FD " << targetFd << ": " << strerror(errno) << std::endl;
+//     }
+//     else if (bytesSent != static_cast<int>(msg.length()))
+//     {
+//         std::cout << "Partial send to FD " << targetFd << ": " << bytesSent << "/" << msg.length() << " bytes" << std::endl;
+//     }
+//     std::cout << "after sending: " << message << std::endl;
+// }
+
+void Server::handlePrivmsg(int senderFd, const std::vector<std::string>& tokens)
 {
-    if (!_clients[clientFd].isAuthenticated())
+    if (tokens.size() < 3 || tokens[2].empty())
     {
-        sendReply(clientFd, "451 :You have not registered");
+        sendReply(senderFd, "412 :No text to send");
         return;
     }
-    if (tokens.size() < 3 || tokens[2].empty() || tokens[2][0] != ':')
-    {
-        sendReply(clientFd, "461 PRIVMSG :Not enough parameters");
-        return;
-    }
-    std::string target = tokens[1];
-    if (target[0] == '#')
-    {
-        sendReply(clientFd, "403 " + target + " :No such channel");
-        return; // Channels not ready
-    }
-    std::string message = tokens[2].substr(1); // Remove leading ':'
-    std::string prefix = ":" + _clients[clientFd].getNickname() + "!" + _clients[clientFd].getUsername() + "@localhost";
-    
-    int targetFd = -1;
+
+    std::string targetNick = tokens[1];
+    std::string message = tokens[2];
+
     for (std::map<int, Client>::iterator it = _clients.begin(); it != _clients.end(); ++it)
     {
-        if (it->second.getNickname() == target)
+        if (it->second.getNickname() == targetNick)
         {
-            targetFd = it->first;
-            break;
+            std::string msgToSend = ":" + _clients[senderFd].getNickname() + " PRIVMSG " + targetNick + " :" + message + "\r\n";
+            send(it->first, msgToSend.c_str(), msgToSend.size(), 0);
+            return;
         }
     }
-    if (targetFd == -1)
+
+    sendReply(senderFd, "401 " + targetNick + " :No such nick/channel");
+}
+
+void Server::handlePing(int clientFd, const std::vector<std::string>& tokens)
+{
+    if (tokens.size() < 2)
     {
-        sendReply(clientFd, "401 " + target + " :No such nick");
+        sendReply(clientFd, "461 PING :Not enough parameters");
         return;
     }
-    sendReply(targetFd, prefix + " PRIVMSG " + target + " :" + message);
-    std::cout << "Sent PRIVMSG from FD " << clientFd << " to FD " << BOLD_CYAN << targetFd << ": " << message << RESET <<std::endl;
+    sendReply(clientFd, "PONG " + tokens[1]);
+    std::cout << "Sent PONG to FD " << clientFd << " for PING " << tokens[1] << std::endl;
 }
+
+
