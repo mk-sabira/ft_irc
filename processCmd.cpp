@@ -6,7 +6,7 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/09 10:59:00 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/13 07:44:34 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/13 07:49:48 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -156,25 +156,6 @@ void Server::sendReply(int clientFd, const std::string& message)
         std::cout << "Partial send to FD " << clientFd << ": " << bytesSent << "/" << msg.length() << " bytes" << std::endl;
     }
 }
-
-// void Server::sendPrivatemsg(int targetFd, const std::string& message)
-// {
-//     std::string msg = message + "\r\n";
-//     std::cout << "Sending to FD " << targetFd << ": " << msg;
-//     int bytesSent = send(targetFd, msg.c_str(), msg.length(), 0);
-//     if (bytesSent < 0)
-//     {
-//         if (errno == EAGAIN || errno == EWOULDBLOCK)
-//             std::cout << "Send to FD " << targetFd << " blocked, will retry" << std::endl;
-//         else
-//             std::cerr << "Error sending to FD " << targetFd << ": " << strerror(errno) << std::endl;
-//     }
-//     else if (bytesSent != static_cast<int>(msg.length()))
-//     {
-//         std::cout << "Partial send to FD " << targetFd << ": " << bytesSent << "/" << msg.length() << " bytes" << std::endl;
-//     }
-//     std::cout << "after sending: " << message << std::endl;
-// }
 
 void Server::handlePrivmsg(int senderFd, const std::vector<std::string>& tokens)
 {
