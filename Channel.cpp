@@ -51,6 +51,17 @@ std::vector<std::string>    Channel::getNicknamesWithPrefixes() const
     return listOfUsers;
 }
 
+//------------------- SETTERS ----------------------------
+
+void Channel::setKey(const std::string& key)
+{
+    this->_key = key;
+}
+
+void Channel::setTopic(const std::string& topic)
+{
+    this->_topic = topic;
+}
 
         //---------------helper functions---------------
 

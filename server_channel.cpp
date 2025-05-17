@@ -64,6 +64,7 @@ std::string Server::getClientPrefix(int fd) const
 
 //---------------------------------- COMMANDS ----------------------------------------------------------------------------------------
 
+//JOIN #NAME N2# #N3 KEY1 K2 K3
 
 void Server::joinCommand(int userFd, std::string channelName, std::string key)
 {
@@ -79,10 +80,8 @@ void Server::joinCommand(int userFd, std::string channelName, std::string key)
     if (_channels.find(channelName) == _channels.end())
     {
         channel = new Channel(channelName);
-
-        // Optional: set key if provided
-        // if (!key.empty())
-        //     channel->setKey(key);
+        if (!key.empty())
+            channel->setKey(key);
 
         _channels.insert(std::pair<std::string, Channel*>(channelName, channel));
         isNewChannel = true;
@@ -131,15 +130,13 @@ void Server::joinCommand(int userFd, std::string channelName, std::string key)
         TOPIC <channel> [<topic>]
 */
 
-
-void Server::topicCommand(int userFd, const std::vector<std::string>& tokens)
+void Server::topicCommand(int userFd, std::string channelName, std::string topic)
 {
-    if (tokens.size() < 2)
+    if (channelName.empty() || channelName[0] != '#')
     {
-        sendError(userFd, ERR_NEEDMOREPARAMS, "TOPIC :Not enough parameters");
-        return ;
+        sendError(userFd, ERR_NOSUCHCHANNEL, channelName);
+        return;
     }
-    std::string channelName = tokens[1];
     std::map<std::string, Channel*>::iterator it = this->_channels.find(channelName);
     if (it == this->_channels.end())
     {
@@ -147,24 +144,41 @@ void Server::topicCommand(int userFd, const std::vector<std::string>& tokens)
         return ;
     }
     Channel &channel = *(it->second);
+    // User* user = getClientByFd(userFd);
+    // if (!user)
+    //     return;
+
     if (!channel.isUser(userFd))
     {
         sendError(userFd, ERR_NOTONCHANNEL, channelName + " :You're not on that channel");
         return;
     }
-    if (tokens.size() == 2)
+    const std::string &topic = channel.getTopic();
+    if (topic.empty())
     {
-        const std::string &topic = channel.getTopic();
-        if (topic.empty())
-            sendToClient(userFd, RPL_NOTOPIC, " " + channel.getName() + " :No topic is set"); // server
+        if (channel.channelHasTopic())
+            sendError(userFd, RPL_TOPIC, " " + getClientNickname(userFd) + " " + channelName + " :" + channel.getTopic());
         else
-            sendToClient(userFd, RPL_TOPIC, " " + channelName + " :" + topic); // server
+            sendError(userFd, RPL_NOTOPIC, " " + getClientNickname(userFd) + " " + channelName + " :No topic is set");
         return;
     }
+    //     sendToClient(userFd, RPL_NOTOPIC, " " + channel.getName() + " :No topic is set"); // server
+    // else
+    //     sendToClient(userFd, RPL_TOPIC, " " + channelName + " :" + topic); // server
+    // return;
     if (channel.isTopicRestricted() && !channel.isOperator(userFd))
     {
         sendError(userFd, ERR_CHANOPRIVSNEEDED, channelName + " :You're not channel operator"); 
         return;
+    }
+    if (topic == ":")
+        channel.setTopic("");
+    else
+    {
+        std::string newTopic = topic;
+        if (newTopic[0] == ':')
+            newTopic = newTopic.substr(1);
+        channel.setTopic(newTopic);
     }
      std::string newTopic = tokens[2]; // assumes already parsed with ":" removed
     for (size_t i = 3; i < tokens.size(); ++i)
@@ -176,7 +190,7 @@ void Server::topicCommand(int userFd, const std::vector<std::string>& tokens)
     else
         channel.setTopic(newTopic);
     
-    std::string msg = ":" + _clients[userFd]->getPrefix() + " TOPIC " + channelName + " :" + newTopic;
+    std::string msg = ":" + _clients[userFd]->getPrefix() + " TOPIC " + channelName + " :" + channel.getTopic();
     broadcastToAll(channel, msg, -1);
 
 }

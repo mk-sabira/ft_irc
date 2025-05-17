@@ -93,6 +93,8 @@ public:
     //-------- CHANNEL ----------------------
     void broadcastToAll(const Channel& channel, const std::string& msg, int excludeFd);
 
+    void    parseJoinCommand(int userFd, const std::string& command);
+
     void    joinCommand(int userFd, std::string channelName, std::string key);
     void    topicCommand(int userFd, const std::vector<std::string>& tokens);
     void    kickCommand(int senderFd, const std::vector<std::string>& tokens);

@@ -12,6 +12,8 @@
 
 ✅ JOIN: add user to channel
 /*
+//JOIN #NAME N2# #N3 KEY1 K2 K3
+
     - Check if channel name is valid
     - check channel existance
     - If user already in the channel, do nothing

@@ -1,0 +1,13 @@
+
+    - JOIN
+        - need extra helper functions for the parsing
+    - INVITE
+         if the channel exists, only members of the channel
+        are allowed to invite other users. When the channel has invite-only
+        flag set, only channel operators may issue INVITE command.
+        Only the user inviting and the user being invited will receive
+        notification of the invitation(both)
+
+    - TOPIC
+    - KICK
+    - MODE
