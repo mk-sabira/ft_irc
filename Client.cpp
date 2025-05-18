@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Client.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
+/*   By: mrhelmy <mrhelmy@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/08 13:59:47 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/13 07:47:32 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/18 00:11:10 by mrhelmy          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -63,6 +63,16 @@ std::string &Client::getRealname()
 bool Client::isRegistered() const
 {
     return (_registered);
+}
+
+// std::string Client::getPrefix() const  // Dina channel // commented by Taha uncomment later when we get a host
+// {
+//     return this->_nickname + "!" + this->_username + "@" + this->_hostname;
+// }
+
+std::string Client::getPrefix() const // Taha channel
+{
+    return _nickname + "!" + _username + "@localhost";  // Use "localhost" if hostname is not available
 }
 
 // setters

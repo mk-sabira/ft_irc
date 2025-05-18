@@ -3,15 +3,15 @@
 /*                                                        :::      ::::::::   */
 /*   processCmd.cpp                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
+/*   By: mrhelmy <mrhelmy@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/09 10:59:00 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/13 11:21:25 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/17 23:20:12 by mrhelmy          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Server.hpp"
-
+#include <cerrno>
 // void Server::splitCommand(std::vector<std::string>& tokens, const std::string& command, std::string::size_type start, std::string::size_type end )
 // {
 //     tokens.push_back(command.substr(start, end - start)); // Command name
@@ -252,8 +252,8 @@ void Server::sendReply(int clientFd, const std::string& message)
     {
         if (errno == EAGAIN || errno == EWOULDBLOCK)
             std::cout << "Send to FD " << clientFd << " blocked, will retry" << std::endl;
-        else
-            std::cerr << "Error sending to FD " << clientFd << ": " << strerror(errno) << std::endl;
+        // else
+        //     std::cerr << "Error sending to FD " << clientFd << ": " << strerror(errno) << std::endl; // commented taha compile error
     }
     else if (bytesSent != static_cast<int>(msg.length()))
     {
@@ -295,5 +295,3 @@ void Server::handlePing(int clientFd, const std::vector<std::string>& tokens)
     sendReply(clientFd, "PONG " + tokens[1]);
     std::cout << "Sent PONG to FD " << clientFd << " for PING " << tokens[1] << std::endl;
 }
-
-

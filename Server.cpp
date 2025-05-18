@@ -3,15 +3,15 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
+/*   By: mrhelmy <mrhelmy@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/02 10:25:46 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/13 11:24:22 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/17 23:57:24 by mrhelmy          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Server.hpp"
-
+#include <cerrno>
 Server::~Server()
 {
     if (_serverFd != -1)
@@ -149,7 +149,7 @@ void Server::recieveClientData(int clientFd)
             std::cout << "No data on FD " << clientFd << " (EAGAIN)" << std::endl;   
             return ;
         }
-        std::cerr << "Error reading from client FD: " << clientFd << ": " << strerror(errno) << std::endl;
+        // std::cerr << "Error reading from client FD: " << clientFd << ": " << strerror(errno) << std::endl; // commented by taha_compilarion error
         removeClient(clientFd);
         return ;
     }
@@ -217,12 +217,38 @@ void Server::processCommand(int clientFd, const std::string& command)
     {
         handlePrivmsg(clientFd, tokens);
     }
+    else if (tokens[0] == "JOIN")  // compilation Error Taha
+	{
+	    if (tokens.size() < 2)
+	    {
+	        sendReply(clientFd, "461 JOIN :Not enough parameters");
+	        return;
+	    }
+	    std::string key = (tokens.size() > 2) ? tokens[2] : "";
+	    joinCommand(clientFd, tokens[1], key);
+	}
+	// else if (tokens[0] == "TOPIC") // compilation Error Taha
+	// {
+	//     topicCommand(clientFd, tokens);
+	// }
+	// else if (tokens[0] == "INVITE") // compilation Error Taha
+	// {
+	//     inviteCommand(clientFd, tokens);
+	// }
+	// else if (tokens[0] == "KICK") // compilation Error Taha
+	// {
+	//     kickCommand(clientFd, tokens);
+	// }
+	// else if (tokens[0] == "MODE") // compilation Error Taha
+	// {
+	//     modeCommand(clientFd, tokens);
+	// }
     else
     {
         std::cout << "Unknown cout: " << YELLOW << tokens[0] << RESET << std::endl;
         sendReply(clientFd, "421 " + tokens[0] + " :Unknown command");
     }
-        
+    
     
 }
 
@@ -254,4 +280,28 @@ std::string Server::getPassword() const
 const char* Server::PortOutOfBound::what() const throw()
 {
     return ("Port must be between 1024 and 65535");
+}
+
+
+///------ Taha for the channel-------
+void Server::sendError(int userFd, int errorCode, const std::string& message)
+{
+    std::string nickname = _clients[userFd].getNickname();
+    std::stringstream ss;
+    ss << ":" << _serverName << " " << errorCode << " "
+       << (nickname.empty() ? "*" : nickname) << " "
+       << message;
+    sendReply(userFd, ss.str());
+}
+
+void Server::sendMessage(int fd, const std::string& message)
+{
+    send(fd, message.c_str(), message.length(), 0);
+}
+
+void Server::sendToClient(int fd, int code, const std::string& message)
+{
+    std::stringstream ss;
+    ss << ":" << _serverName << " " << code << " " << _clients[fd].getNickname() << " " << message << "\r\n";
+    sendReply(fd, ss.str());
 }

@@ -3,13 +3,15 @@
 /*                                                        :::      ::::::::   */
 /*   Client.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
+/*   By: mrhelmy <mrhelmy@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/08 13:55:47 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/09 08:13:28 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/17 17:39:06 by mrhelmy          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
+#ifndef CLIENT_HPP
+#define CLIENT_HPP
 
 #include <iostream>
 
@@ -47,5 +49,8 @@ class Client
         std::string& getUsername();
         std::string& getRealname();
         bool isRegistered() const;
-        
+        // Dina Channel
+		std::string    getPrefix()const;
 };
+
+#endif
