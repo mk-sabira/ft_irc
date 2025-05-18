@@ -149,7 +149,7 @@ void Server::recieveClientData(int clientFd)
             std::cout << "No data on FD " << clientFd << " (EAGAIN)" << std::endl;   
             return ;
         }
-        // std::cerr << "Error reading from client FD: " << clientFd << ": " << strerror(errno) << std::endl; // commented by taha_compilarion error
+        std::cerr << "Error reading from client FD: " << clientFd << ": " << strerror(errno) << std::endl;
         removeClient(clientFd);
         return ;
     }

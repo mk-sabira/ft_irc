@@ -252,8 +252,8 @@ void Server::sendReply(int clientFd, const std::string& message)
     {
         if (errno == EAGAIN || errno == EWOULDBLOCK)
             std::cout << "Send to FD " << clientFd << " blocked, will retry" << std::endl;
-        // else
-        //     std::cerr << "Error sending to FD " << clientFd << ": " << strerror(errno) << std::endl; // commented taha compile error
+        else
+            std::cerr << "Error sending to FD " << clientFd << ": " << strerror(errno) << std::endl;
     }
     else if (bytesSent != static_cast<int>(msg.length()))
     {

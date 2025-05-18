@@ -149,7 +149,7 @@ bool Channel::isTopicRestricted() const {
     return this->_topicRestricted;
 }
 
-// void Channel::setTopic(const std::string& topic) { // Taha compile error defined down!!!
+// void Channel::setTopic(const std::string& topic) { // Taha compile error defined previously!!
 //     this->_topic = topic;
 // }
 
@@ -157,7 +157,7 @@ void Channel::clearTopic() {
     this->_topic.clear();
 }
 
-// std::string Channel::getTopic() const { // compiler error it is declared down
+// std::string Channel::getTopic() const { // compiler error it is declared previously
 //     return this->_topic;
 // }
 
