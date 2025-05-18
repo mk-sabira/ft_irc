@@ -9,7 +9,7 @@
 # define ERR_NOSUCHNICK  401 // No such nick
 # define ERR_NOSUCHCHANNEL  403 // No such channel
 # define ERR_USERNOTINCHANNEL  441  //user isn't on that channel
-# define ERR_NOTONCHANNEL  442  // not enough parameters
+# define ERR_NOTONCHANNEL  442  //  "<channel> :You're not on that channel"
 # define ERR_USERONCHANNEL  443  // user is already on channel
 # define ERR_KEYSET  467 // Channel key already set
 # define ERR_NEEDMOREPARAMS  461  // not enough parameters
@@ -17,7 +17,7 @@
 # define ERR_UNKNOWNMODE  472 // unknown mode char
 # define ERR_INVITEONLYCHAN  473 // not invited, Cannot join
 # define ERR_BADCHANNELKEY  475 // wrong key, Cannot join
-# define ERR_CHANOPRIVSNEEDED  482  //not channel operator
+# define ERR_CHANOPRIVSNEEDED  482  //
 
 
 #include <iostream>
@@ -39,33 +39,40 @@ class Channel
         std::string  _name;  //channel name
         std::string  _topic; //description of channel
         std::string  _key;   //optional password to join the channel
-        size_t       userLimit;  //max num of users in the channel
-        bool         inviteOnly; //invite onlu mode +i
+        int       _userLimit;  //max num of users in the channel
+        bool         _inviteOnly; //invite onlu mode +i
         bool         _topicRestricted;    //topic can be changed? +t
-        std::map<int, Client*> _users;   //map of users in the channel with their socket or id
+        std::map<int, Client&> _users;   //map of users in the channel with their socket or id
         std::set<int>   _operators;      // set of users (socket, id) who are operators +o
         std::set<int>   _invited;        //which user have been invited, check access for invite-only channels
+        Channel& operator=(Channel& other);
+        Channel(Channel& other);
 
 
     public:
         Channel();
         Channel(const std::string& name);
-        Channel& operator=(Channel& other);
-        Channel(Channel& other);
         ~Channel();
 
         //-----Getters--------------
-        std::set<int> getUserFds() const;
         std::string getName() const;
-        std::string getKey() const;
         std::string getTopic() const;
+        std::string getKey() const;
+        std::set<int> getUserFds() const;
         std::vector<std::string>    getNicknamesWithPrefixes() const;
         std::string getClientPrefix(int fd) const;
 
 
 
         //-----Setters--------------
+        void setName(const std::string& channelName);
         void setTopic(const std::string& topic);
+        void setKey(const std::string& key);
+        void setInviteFlag(const char   sign);
+        void setRestrictions(const char   sign);
+        void setKeyMode(const char   sign, const std::string& key);
+        void setOperatorMode(const char   sign, int userFd);
+        void setUserLimit(const char   sign, int limit);
         // void addOperator(int clientFd);
 
         //---------------helper functions---------------
@@ -106,12 +113,6 @@ class Channel
         //-----------KICK------------------
         bool isOperator(int clientFd) const;
         void kickUser(int targetFd);
-        
-
-
-        //-----------PART------------------
-        //-----------NAMES------------------
-        //-----------LIST------------------
 
         void    broadcastToAll(const std::string& message, Server* server);
     };

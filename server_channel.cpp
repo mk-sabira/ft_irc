@@ -137,9 +137,7 @@ void Server::topicCommand(int userFd, std::string channelName, std::string topic
         sendError(userFd, ERR_NOSUCHCHANNEL, channelName);
         return;
     }
-    std::map<std::string, Channel*>::iterator it = this->_channels.find(channelName);
-    if (it == this->_channels.end())
-    {
+    if (_channels.find(channelName) == _channels.end())    {
         sendError(userFd, ERR_NOSUCHCHANNEL,  channelName + " :No such channel");
         return ;
     }

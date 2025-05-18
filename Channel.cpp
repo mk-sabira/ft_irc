@@ -2,7 +2,14 @@
 #include "Server.hpp"
 #include "Client.hpp"
 
-Channel::Channel() {}
+Channel::Channel() {
+    this->_key = nullptr;
+    this->_topic = nullptr;
+    this->_userLimit = -1;
+    this->_inviteOnly = false;
+    this->_topicRestricted = false;
+
+}
 Channel::Channel(const std::string& name) : _name(name) {}
 Channel& Channel::operator=(Channel& other) {}
 Channel::Channel(Channel& other) {}
@@ -27,29 +34,29 @@ std::string Channel::getKey() const
     return this->_key;
 }
 
-std::set<int> Channel::getUserFds() const
-{
-    std::set<int>   usersFds;
+// std::set<int> Channel::getUserFds() const
+// {
+//     std::set<int>   usersFds;
 
-    std::map<int, Clients*>::iterator   it;
-    for(it = _users.begin(); it != _users.end(); ++it)
-        usersFds.insert(it->first);
-    return usersFds;
-}
+//     std::map<int, Clients*>::iterator   it;
+//     for(it = _users.begin(); it != _users.end(); ++it)
+//         usersFds.insert(it->first);
+//     return usersFds;
+// }
 
-std::vector<std::string>    Channel::getNicknamesWithPrefixes() const
-{
-    std::vector<std::string> listOfUsers;
-    for (std::map<int, Client*>::const_iterator it = _users.begin(); it != _users.end(); ++it) {
-        Client* client = it->second;
-        std::string prefix;
+// std::vector<std::string>    Channel::getNicknamesWithPrefixes() const
+// {
+//     std::vector<std::string> listOfUsers;
+//     for (std::map<int, Client*>::const_iterator it = _users.begin(); it != _users.end(); ++it) {
+//         Client* client = it->second;
+//         std::string prefix;
 
-        if (isOperator(client->getFd()))
-            prefix = "@";
-        listOfUsers.push_back(prefix + client->getNickname());
-    }
-    return listOfUsers;
-}
+//         if (isOperator(client->getFd()))
+//             prefix = "@";
+//         listOfUsers.push_back(prefix + client->getNickname());
+//     }
+//     return listOfUsers;
+// }
 
 //------------------- SETTERS ----------------------------
 
@@ -63,6 +70,50 @@ void Channel::setTopic(const std::string& topic)
     this->_topic = topic;
 }
 
+void Channel::setName(const std::string& channelName)
+{
+        this->_name = channelName;
+
+}
+
+void Channel::setInviteFlag(const char   sign)
+{
+    if (sign == '+')
+        this->_inviteOnly = true;
+    else
+        this->_inviteOnly = false;
+}
+void Channel::setRestrictions(const char   sign)
+{
+    if (sign == '+')
+        this->_topicRestricted = true;
+    else
+        this->_topicRestricted = false;
+}
+
+void Channel::setKeyMode(const char   sign, const std::string& key)
+{
+    if (sign == '+')
+        this->_key = key;
+    else
+        this->_key = nullptr;
+    }
+    
+void Channel::setOperatorMode(const char   sign, int userFd)
+{
+    if (sign == '+')
+        this->addOperator(userFd);
+    else
+        this->removeOperator(userFd);
+}
+
+void Channel::setUserLimit(const char   sign, int limit)
+{
+    if (sign == '+')
+        this->_userLimit = limit;
+    else
+        this->_userLimit = -1;
+}
         //---------------helper functions---------------
 
  bool Channel::isUser(int clientFd) const
@@ -80,7 +131,7 @@ bool Channel::isOperator(int clientFd) const
 
 bool Channel::isInviteOnly() const
 {
-    if (this->inviteOnly)
+    if (this->_inviteOnly)
         return true;
     return false;
 }
@@ -101,7 +152,9 @@ bool Channel::hasKey() const
 
 bool Channel::isFull() const
 {
-    if (this->_users.size() != userLimit)
+    if (this->_userLimit == -1)
+        return false;
+    if (this->_users.size() != _userLimit)
         return false;
     return true;
 }

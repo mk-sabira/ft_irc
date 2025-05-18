@@ -99,6 +99,8 @@ public:
     void    topicCommand(int userFd, const std::vector<std::string>& tokens);
     void    kickCommand(int senderFd, const std::vector<std::string>& tokens);
     void    inviteCommand(int senderFd, const std::vector<std::string>& tokens);
+    void    modeCommand(int senderFd, const std::vector<std::string>& tokens);
+
 
 };
 
