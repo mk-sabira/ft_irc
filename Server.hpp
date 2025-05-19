@@ -101,7 +101,7 @@ class Server
 	
 	    void    joinCommand(int userFd, std::string channelName, std::string key);
 	    // void    topicCommand(int userFd, const std::vector<std::string>& tokens);
-	    // void    kickCommand(int senderFd, const std::vector<std::string>& tokens);
+	    void    kickCommand(int senderFd, const std::vector<std::string>& tokens);
 	    // void    inviteCommand(int senderFd, const std::vector<std::string>& tokens);
 	    
 	    //------ CHANNEL Taha --------//

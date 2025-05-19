@@ -255,4 +255,55 @@ void Server::joinCommand(int userFd, std::string channelName, std::string key) /
 /* syntax:
     KICK <channel>{,<channel>} <user>{,<user>} [<comment>] // commented by dina
 */
-// void Server::kickCommand(int senderFd, const std::vector<std::string>& tokens) // commented by Dina
+
+void Server::kickCommand(int senderFd, const std::vector<std::string>& tokens)
+{
+    if (tokens.size() < 3)
+    {
+        sendReply(senderFd, "461 KICK :Not enough parameters");
+        return;
+    }
+
+    std::string channelName = tokens[1];
+    std::string targetNick = tokens[2];
+    std::string reason = (tokens.size() >= 4) ? tokens[3].substr(1) : _clients[senderFd].getNickname();
+
+    std::map<std::string, Channel*>::iterator it = _channels.find(channelName);
+    if (it == _channels.end())
+    {
+        sendReply(senderFd, "403 " + channelName + " :No such channel");
+        return;
+    }
+
+    Channel* channel = it->second;
+    if (!channel->isUser(senderFd))
+    {
+        sendReply(senderFd, "442 " + channelName + " :You're not on that channel");
+        return;
+    }
+
+    if (!channel->isOperator(senderFd))
+    {
+        sendReply(senderFd, "482 " + channelName + " :You're not channel operator");
+        return;
+    }
+
+    Client* targetClient = getClientByNickname(targetNick);
+    if (!targetClient)
+    {
+        sendReply(senderFd, "401 " + targetNick + " :No such nick");
+        return;
+    }
+
+    int targetFd = targetClient->getFd();
+    if (!channel->isUser(targetFd))
+    {
+        sendReply(senderFd, "441 " + targetNick + " " + channelName + " :They aren't on that channel");
+        return;
+    }
+
+    std::string msg = ":" + _clients[senderFd].getPrefix() + " KICK " + channelName + " " + targetNick + " :" + reason;
+    channel->broadcastToAll(msg, this);
+
+    channel->removeUser(targetFd);
+}

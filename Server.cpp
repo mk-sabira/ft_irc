@@ -235,10 +235,10 @@ void Server::processCommand(int clientFd, const std::string& command)
 	// {
 	//     inviteCommand(clientFd, tokens);
 	// }
-	// else if (tokens[0] == "KICK") // compilation Error Taha
-	// {
-	//     kickCommand(clientFd, tokens);
-	// }
+	else if (tokens[0] == "KICK")
+	{
+	    kickCommand(clientFd, tokens);
+	}
 	// else if (tokens[0] == "MODE") // compilation Error Taha
 	// {
 	//     modeCommand(clientFd, tokens);
@@ -304,4 +304,14 @@ void Server::sendToClient(int fd, int code, const std::string& message)
     std::stringstream ss;
     ss << ":" << _serverName << " " << code << " " << _clients[fd].getNickname() << " " << message << "\r\n";
     sendReply(fd, ss.str());
+}
+
+Client* Server::getClientByNickname(const std::string& nickname)
+{
+    for (std::map<int, Client>::iterator it = _clients.begin(); it != _clients.end(); ++it)
+    {
+        if (it->second.getNickname() == nickname)
+            return &it->second;
+    }
+    return NULL;
 }
