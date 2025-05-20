@@ -29,7 +29,6 @@
 #include <vector>
 
 #include "Client.hpp"
-// #include "Server.hpp" // Taha compile error 
 
 class Server;
 
@@ -37,7 +36,6 @@ class Server;
 class Channel
 {
     private:
-
         std::string  _name;  //channel name
         std::string  _topic; //description of channel
         std::string  _key;   //optional password to join the channel
@@ -51,13 +49,13 @@ class Channel
         Channel& operator=(Channel& other);
         Channel(Channel& other);
         
-        public:
+    public:
         Channel();
         Channel(const std::string& name);
         ~Channel();
         
         //-----Getters--------------
-        std::set<int> getUserFds() const;
+        std::set<int>	getUserFds() const;
         std::string getName() const;
         std::string getKey() const;
         std::string getTopic() const;
@@ -65,46 +63,40 @@ class Channel
         std::string getClientPrefix(int fd) const;
 
 
-
         //-----Setters--------------
-        void setName(const std::string& channelName);
-        void setTopic(const std::string& topic);
-        void setKey(const std::string& key);
-        void setInviteFlag(const char   sign);
-        void setRestrictions(const char   sign);
-        void setKeyMode(const char   sign, const std::string& key);
-        void setOperatorMode(const char   sign, int userFd);
-        void setUserLimit(const char   sign, int limit);
-
+        void	setName(const std::string& channelName);
+        void	setTopic(const std::string& topic);
+        void	setKey(const std::string& key);
+        void	setInviteFlag(const char   sign);
+        void	setRestrictions(const char   sign);
+        void	setKeyMode(const char   sign, const std::string& key);
+        void	setOperatorMode(const char   sign, int userFd);
+        void	setUserLimit(const char   sign, int limit);
+		
         //---------------helper functions---------------
-
-        bool isUser(int clientFd) const;
-        bool isOperator(int clientFd) const;
-        bool isInviteOnly() const;
-        bool isInvited(int clientFd) const;
-        bool isTopicRestricted() const;
-        bool isFull() const;
-        bool canJoin(int clientFd, const std::string& key);
-        bool hasKey() const;
-        void removeUser(int clientFd);
-        void removeOperator(int clientFd);
-        void addUser(int clientFd, Client* client);
-        void addOperator(int clientFd) ;
-        void addInvite(int clientFd) ;
-        void clearTopic();
-
-        //----------INVITE--------------
-        void inviteUser(int clientFd);
-
-        //-----------KICK------------------
-        void kickUser(int targetFd);
-
+		
+        bool	isUser(int clientFd) const;
+        bool	isOperator(int clientFd) const;
+        bool	isInviteOnly() const;
+        bool	isInvited(int clientFd) const;
+        bool	isTopicRestricted() const;
+        bool	isFull() const;
+        bool	canJoin(int clientFd, const std::string& key);
+        bool	hasKey() const;
+        void	removeUser(int clientFd);
+        void	removeOperator(int clientFd);
+        void	addUser(int clientFd, Client* client);
+        void	addOperator(int clientFd) ;
+        void	addInvite(int clientFd) ;
+        void	clearTopic();
+        void	inviteUser(int clientFd);
+        void 	kickUser(int targetFd);
         void    broadcastToAll(const std::string& message, Server* server);
     };
 
 
 
-void sendError(int userFd, int errorCode, const std::string& target, const std::string& message = "");
+// void sendError(int userFd, int errorCode, const std::string& target, const std::string& message = "");
 
 
 #endif

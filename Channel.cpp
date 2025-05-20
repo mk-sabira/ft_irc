@@ -2,6 +2,8 @@
 #include "Server.hpp"
 #include "Client.hpp"
 
+
+//----------------- Constructors + Destructor --------------------
 Channel::Channel()
     : _name(""),
       _topic(""),
@@ -18,11 +20,8 @@ Channel::Channel(const std::string& name)
       _inviteOnly(false),
       _topicRestricted(false)
 {}
-
 Channel& Channel::operator=(Channel& other) {return *this;}
 Channel::Channel(Channel& other) {}
-
-
 Channel::~Channel() {}
 
 
@@ -179,7 +178,7 @@ void Channel::broadcastToAll(const std::string& message, Server* server)
     }
 }
 
-//-------------------- JOIN --------------------------
+//-------------------- Helper Functions --------------------------
 
 bool Channel::canJoin(int clientFd, const std::string& key)
 {
@@ -198,17 +197,13 @@ void Channel::addUser(int clientFd, Client* client) // Taha fixed...
     _invited.erase(clientFd);
 }
 
-//------------ TOPIC -----------------
-
 bool Channel::isTopicRestricted() const {
     return this->_topicRestricted;
 }
 
-
 void Channel::clearTopic() {
     this->_topic.clear();
 }
-
 
 std::string Channel::getClientPrefix(int fd) const
 {
@@ -216,8 +211,6 @@ std::string Channel::getClientPrefix(int fd) const
         return ("@");
     return ("");
 }
-
-
 
 void Channel::addOperator(int clientFd)
 {
@@ -228,7 +221,6 @@ void Channel::addInvite(int clientFd)
 {
     this->_invited.insert(clientFd);
 }
-
 
 void Channel::removeUser(int clientFd)
 {

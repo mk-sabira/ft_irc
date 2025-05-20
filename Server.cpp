@@ -232,10 +232,10 @@ void Server::processCommand(int clientFd, const std::string& command)
 	{
 	    parseTopicCommand(clientFd, command);
 	}
-	// else if (tokens[0] == "INVITE") // compilation Error Taha
-	// {
-	//     inviteCommand(clientFd, tokens);
-	// }
+	else if (tokens[0] == "INVITE") // compilation Error Taha
+	{
+	    inviteCommand(clientFd, tokens);
+	}
 	else if (tokens[0] == "KICK")
 	{
 	    kickCommand(clientFd, tokens);

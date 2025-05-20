@@ -266,62 +266,62 @@ void Server::topicCommand(int userFd, std::string channelName, std::string topic
         INVITE <nickname> <channel>
 */
 
-// void Server::inviteCommand(int senderFd, const std::vector<std::string>& tokens) // Taha compilation Error
-// {
-//     if (tokens.size() < 3)
-//     {
-//         sendError(senderFd, ERR_NEEDMOREPARAMS, "INVITE :Not enough parameters");
-//         return;
-//     }
+void Server::inviteCommand(int senderFd, const std::vector<std::string>& tokens) // Taha compilation Error
+{
+    if (tokens.size() < 3)
+    {
+        sendError(senderFd, ERR_NEEDMOREPARAMS, "INVITE :Not enough parameters");
+        return;
+    }
     
-//     std::string targetNick = tokens[1];
-//     std::string channelName = tokens[2];
+    std::string targetNick = tokens[1];
+    std::string channelName = tokens[2];
     
-//     Client* targetClient = getClientByNickname(targetNick);
-//     if (!targetClient)
-//     {
-//         sendError(senderFd, ERR_NOSUCHNICK, targetNick + " :No such nick");
-//         return;
-//     }
+    Client* targetClient = getClientByNickname(targetNick);
+    if (!targetClient)
+    {
+        sendToClient(senderFd, ERR_NOSUCHNICK, targetNick + " :No such nick");
+        return;
+    }
 
-//     std::map<std::string, Channel*>::iterator it = _channels.find(channelName);
-//     if (it == _channels.end())
-//     {
-//         sendError(senderFd, ERR_NOSUCHCHANNEL, channelName + " :No such channel");
-//         return;
-//     }
+    std::map<std::string, Channel*>::iterator it = _channels.find(channelName);
+    if (it == _channels.end())
+    {
+        sendToClient(senderFd, ERR_NOSUCHCHANNEL, channelName + " :No such channel");
+        return;
+    }
 
-//     Channel& channel = *(it->second);
+    Channel& channel = *(it->second);
 
-//     if (!channel.isUser(senderFd))
-//     {
-//         sendError(senderFd, ERR_NOTONCHANNEL, channelName + " :You're not on that channel"); // ERR_NOTONCHANNEL
-//         return;
-//     }
+    if (!channel.isUser(senderFd))
+    {
+        sendToClient(senderFd, ERR_NOTONCHANNEL, channelName + " :You're not on that channel"); // ERR_NOTONCHANNEL
+        return;
+    }
 
-//     if (channel.isInviteOnly() && !channel.isOperator(senderFd))
-//     {
-//         sendError(senderFd, ERR_CHANOPRIVSNEEDED, channelName + " :You're not channel operator");
-//         return;
-//     }
+    if (channel.isInviteOnly() && !channel.isOperator(senderFd))
+    {
+        sendToClient(senderFd, ERR_CHANOPRIVSNEEDED, channelName + " :You're not channel operator");
+        return;
+    }
 
-//     int targetFd = targetClient->getFd();
+    int targetFd = targetClient->getFd();
 
-//     if (channel.isUser(targetFd))
-//     {
-//         sendError(senderFd, ERR_USERONCHANNEL, targetNick + " " + channelName + " :is already on channel");
-//         return;
-//     }
-//     channel.addInvite(targetFd);
+    if (channel.isUser(targetFd))
+    {
+        sendToClient(senderFd, ERR_USERONCHANNEL, targetNick + " " + channelName + " :is already on channel");
+        return;
+    }
+    channel.addInvite(targetFd);
 
-//     // Notify inviter
-//     sendToClient(senderFd, RPL_INVITING, targetNick + " " + channelName); //invite reply
+    // Notify inviter
+    sendToClient(senderFd, RPL_INVITING, targetNick + " " + channelName); //invite reply
 
-//     // Notify invitee // commented by Taha compile error
-//     // std::string inviteMsg = ":" + _clients[senderFd]->getPrefix() + 
-//     // " INVITE " + targetNick + " :" + channelName;
-//     // sendMessage(targetFd, inviteMsg);
-// }
+    // Notify invitee // commented by Taha compile error
+    std::string inviteMsg = ":" + _clients[senderFd]->getPrefix() + 
+    " INVITE " + targetNick + " :" + channelName;
+    sendReply(targetFd, inviteMsg);
+}
 
 /* syntax:
     KICK <channel>{,<channel>} <user>{,<user>} [<comment>] // commented by dina

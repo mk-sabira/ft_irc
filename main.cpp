@@ -10,8 +10,8 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "main.hpp"
-
+#include "Server.hpp"
+#include "colors.hpp"
 int main(int argc, char **argv)
 {
     if (argc != 3)
