@@ -15,6 +15,7 @@
 #define SERVER_HPP
 
 #include <iostream>
+#include <cstring>
 #include <sys/socket.h>
 #include <sstream>
 #include <exception>
@@ -41,7 +42,7 @@ class Server
 	    std::string _password;
 	    struct sockaddr_in _serverAdd;
 	    std::vector<struct pollfd> _fds;
-	    std::map<int, Client> _clients;
+	    std::map<int, Client*> _clients;
 	    std::string _serverName;
 	    std::map<std::string, Channel*> _channels; // <name, obj> // Dina Channel // Taha compilation error
 	    std::map<std::string, int> _nickToFd; // <nickname, fd> // Dina Channel // Taha compilation error
@@ -59,27 +60,26 @@ class Server
 	    
 	    void handleUser(int clientFd, const std::vector<std::string>& tokens);
 	    bool validateUser(const std::vector<std::string>& tokens, std::string& errorMsg);
-	    void sendReply(int clientFd, const std::string& message);
 	    void handlePrivmsg(int clientFd, const std::vector<std::string>& tokens);
-	
+		
 	    void handlePing(int clientFd, const std::vector<std::string>& tokens);
-	public:
+		public:
 	    Server(const std::string& port, const std::string& password);
 	    ~Server();
-	
+		
 	    //Methods
 	    bool serverSetup();
 	    bool runServer();
-	
+		
 	    //setters
 	    void setPort(int& port);
 	    void setPassword(std::string& password);
-	
+		
 	    //getters
 	    int getPort() const;
 	    std::string getPassword() const;
 	    
-	     //------------------------ // Dina Channel
+		//------------------------ // Dina Channel
 	    Client* getClientByNickname(const std::string&);
 	    // std::string getClientNickname(int fd) const; // taha compilation error__.
 	    
@@ -87,20 +87,22 @@ class Server
 	    //exceptions
 	    class PortOutOfBound: public std::exception
 	    {
-	        public:
+			public:
 	        const char* what() const throw();
 	    };
 	    
 	    //----- helper functions----------- // Dina Channel
+		void sendReply(int clientFd, const std::string& message);
 	    void    sendError(int userFd, int errorCode, const std::string& message);
-	    void    sendMessage(int fd, const std::string& message);
 	    void    sendToClient(int fd, int code, const std::string& message);
 	
 	    //-------- CHANNEL ---------------------- // Dina channel
 	    void broadcastToAll(const Channel& channel, const std::string& msg, int excludeFd); // Taha compilation error
-	
+		
+		void 	parseJoinCommand(int userFd, const std::string& command);
 	    void    joinCommand(int userFd, std::string channelName, std::string key);
-	    // void    topicCommand(int userFd, const std::vector<std::string>& tokens);
+		void	parseTopicCommand( int userFd, const std::string& command);
+	    void    topicCommand(int userFd, std::string channelName, std::string topic, bool colon);
 	    void    kickCommand(int senderFd, const std::vector<std::string>& tokens);
 	    // void    inviteCommand(int senderFd, const std::vector<std::string>& tokens);
 	    

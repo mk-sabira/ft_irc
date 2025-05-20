@@ -17,85 +17,111 @@ std::string vecToStr(std::vector<std::string> vec) // Taha changed form string& 
     return (str);
 }
 
-// void Server::sendError(int userFd, int errorCode, const std::string& message) // Taha Error compilation
-// {
-//     std::string nickname = getClientNickname(userFd); // safely fallback if not registered
-//     std::stringstream ss;
-
-//     ss << ":" << _serverName << " " << errorCode << " "
-//        << (nickname.empty() ? "*" : nickname) << " "
-//        << message;
-
-//     sendReply(userFd, ss.str());
-// }
-
-
-// void Server::sendToClient(int fd, int code, const std::string& message) { // Taha compile error!
-//     std::stringstream ss;
-//     std::string nickname =  getClientNickname(fd); 
-
-//     ss << ":" << _serverName << " "
-//        << code << " "
-//        << nickname << " "
-//        << message << "\r\n";
-
-//     sendReply(fd, ss.str());
-// }
-
-
 void Server::broadcastToAll(const Channel& channel, const std::string& msg, int excludeFd) // Taha compilation Error
 {
     const std::set<int>& users = channel.getUserFds();
 
     for (std::set<int>::const_iterator it = users.begin(); it != users.end(); ++it) {
         if (*it != excludeFd)
-            sendMessage(*it, msg);
+            sendReply(*it, msg);
     }
 }
 
-// std::string Server::getClientPrefix(int fd) const // comented by Taha compile Error!
-// {
-//     std::map<int, Client>::const_iterator it = _clients.find(fd);
-//     if (it != _clients.end() && it->second != NULL)
-//         return it->second.getPrefix();
-//     return "";
-// }
-
 std::string Server::getClientPrefix(int fd) const // Taha fixed
 {
-    std::map<int, Client>::const_iterator it = _clients.find(fd);
+    std::map<int, Client*>::const_iterator it = _clients.find(fd);
     if (it != _clients.end())
-        return it->second.getPrefix();
+        return it->second->getPrefix();
     return "";
 }
 
 
-//---------------------------------- COMMANDS ----------------------------------------------------------------------------------------
+//---------------------------------- COMMANDS ---------------------------------
+void Server::parseJoinCommand(int userFd, const std::string& command)
+{
+    std::vector<std::string> tokens;
+    size_t                   start = 0;
+    size_t                   end = command.find(' ');
 
+    while (end != std::string::npos && command[start] == ' ')
+    {
+        ++start;
+        end = command.find(' ', start);
+    }
 
-void Server::joinCommand(int userFd, std::string channelName, std::string key) // Taha compilation error
+    if (end == std::string::npos)
+        return;
+
+    tokens.push_back(command.substr(start, end - start));
+    start = end + 1;
+
+    while (start < command.length() && command[start] == ' ')
+        ++start;
+
+    end = command.find(' ', start);
+    std::string channels = command.substr(start, end - start);
+
+    std::string keys;
+    if (end != std::string::npos)
+    {
+        start = end + 1;
+        while (start < command.length() && command[start] == ' ')
+            ++start;
+        if (start < command.length())
+            keys = command.substr(start);
+    }
+
+    // Split channels
+    std::vector<std::string> channelList;
+    std::string::size_type chanStart = 0;
+    std::string::size_type chanEnd;
+    while ((chanEnd = channels.find(',', chanStart)) != std::string::npos)
+    {
+        channelList.push_back(channels.substr(chanStart, chanEnd - chanStart));
+        chanStart = chanEnd + 1;
+    }
+    if (chanStart < channels.length())
+        channelList.push_back(channels.substr(chanStart));
+
+    // Split keys
+    std::vector<std::string> keyList;
+    std::string::size_type keyStart = 0;
+    std::string::size_type keyEnd;
+    while ((keyEnd = keys.find(',', keyStart)) != std::string::npos)
+    {
+        keyList.push_back(keys.substr(keyStart, keyEnd - keyStart));
+        keyStart = keyEnd + 1;
+    }
+    if (keyStart < keys.length())
+        keyList.push_back(keys.substr(keyStart));
+
+    // Join each channel with corresponding key
+    for (std::size_t i = 0; i < channelList.size(); ++i)
+    {
+        std::string key = (i < keyList.size()) ? keyList[i] : "";
+        joinCommand(userFd, channelList[i], key);
+    }
+}
+
+void Server::joinCommand(int userFd, std::string channelName, std::string key)
 {
     if (channelName.empty() || channelName[0] != '#')
     {
-        sendError(userFd, ERR_NOSUCHCHANNEL, channelName);
+        sendToClient(userFd, ERR_NOSUCHCHANNEL, channelName);
         return;
     }
 
-    Channel* channel = nullptr;
-    bool isNewChannel = false;
-
+    Channel* channel = NULL;
+    
     if (_channels.find(channelName) == _channels.end())
     {
         channel = new Channel(channelName);
-
-        // Optional: set key if provided
-        // if (!key.empty())
-        //     channel->setKey(key);
-
+        if (!key.empty())
+            channel->setKey(key);
+        
         _channels.insert(std::pair<std::string, Channel*>(channelName, channel));
-        isNewChannel = true;
 
-        channel->addUser(userFd, &_clients[userFd]);
+        channel->addUser(userFd, this->_clients[userFd]);
         channel->addOperator(userFd);
     }
     else
@@ -104,20 +130,20 @@ void Server::joinCommand(int userFd, std::string channelName, std::string key) /
 
         if (channel->isUser(userFd))
             return;
-
+            
         if (channel->isInviteOnly() && !channel->isInvited(userFd)) {
-            sendError(userFd, ERR_INVITEONLYCHAN, channelName);
+            sendToClient(userFd, ERR_INVITEONLYCHAN, channelName + ": user not invited");
             return;
         }
         if (!channel->canJoin(userFd, key)){
-            sendError(userFd, ERR_BADCHANNELKEY, channelName);
+            sendToClient(userFd, ERR_BADCHANNELKEY, channelName + ": wrong key");
             return;
         }
         if (channel->isFull()) {
-            sendError(userFd, ERR_CHANNELISFULL, channelName);
+            sendToClient(userFd, ERR_CHANNELISFULL, channelName + ": channel is full");
             return;
         }
-        channel->addUser(userFd, &_clients[userFd]);
+        channel->addUser(userFd, this->_clients[userFd]);
     }
     std::string prefix = channel->getClientPrefix(userFd);
     std::string joinMsg = ":" + prefix + " JOIN " + channelName;
@@ -133,63 +159,108 @@ void Server::joinCommand(int userFd, std::string channelName, std::string key) /
     sendToClient(userFd, RPL_ENDOFNAMES , " " + channelName + " :End of /NAMES list."); // send to client
 }
 
-//-------------------------------------------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------
+void Server::parseTopicCommand( int userFd, const std::string& command)
+{
+    std::vector<std::string> tokens;
+    std::string::size_type   start = 0;
+    std::string::size_type   end = command.find(' ');
 
-/* topic:
-        TOPIC <channel> [<topic>]
-*/
+    // Skip any leading spaces after the command name
+    while (end != std::string::npos && command[start] == ' ')
+    {
+        ++start;
+        end = command.find(' ', start);
+    }
 
+    if (end == std::string::npos)
+        return;
 
-// void Server::topicCommand(int userFd, const std::vector<std::string>& tokens) commented by Taha compile error!
-// {
-//     if (tokens.size() < 2)
-//     {
-//         sendError(userFd, ERR_NEEDMOREPARAMS, "TOPIC :Not enough parameters");
-//         return ;
-//     }
-//     std::string channelName = tokens[1];
-//     std::map<std::string, Channel*>::iterator it = this->_channels.find(channelName);
-//     if (it == this->_channels.end())
-//     {
-//         sendError(userFd, ERR_NOSUCHCHANNEL,  channelName + " :No such channel");
-//         return ;
-//     }
-//     Channel &channel = *(it->second);
-//     if (!channel.isUser(userFd))
-//     {
-//         sendError(userFd, ERR_NOTONCHANNEL, channelName + " :You're not on that channel");
-//         return;
-//     }
-//     if (tokens.size() == 2)
-//     {
-//         const std::string &topic = channel.getTopic();
-//         if (topic.empty())
-//             sendToClient(userFd, RPL_NOTOPIC, " " + channel.getName() + " :No topic is set"); // server
-//         else
-//             sendToClient(userFd, RPL_TOPIC, " " + channelName + " :" + topic); // server
-//         return;
-//     }
-//     if (channel.isTopicRestricted() && !channel.isOperator(userFd))
-//     {
-//         sendError(userFd, ERR_CHANOPRIVSNEEDED, channelName + " :You're not channel operator"); 
-//         return;
-//     }
-//      std::string newTopic = tokens[2]; // assumes already parsed with ":" removed
-//     for (size_t i = 3; i < tokens.size(); ++i)
-//     {
-//         newTopic += " " + tokens[i];
-//     }
-//     if (newTopic.empty())
-//         channel.clearTopic();
-//     else
-//         channel.setTopic(newTopic);
+    tokens.push_back(command.substr(start, end - start)); // Command name (e.g., "TOPIC")
+    start = end + 1;
+
+    // Skip additional spaces
+    while (start < command.length() && command[start] == ' ')
+        ++start;
+
+    if (start >= command.length())
+    {
+        // Missing channel parameter
+        sendToClient(userFd, ERR_NEEDMOREPARAMS, "TOPIC: Not enough parameters");
+        return;
+    }
+
+    // Extract channel
+    end = command.find(' ', start);
+    std::string channel = command.substr(start, end - start);
+    start = (end == std::string::npos) ? std::string::npos : end + 1;
+
+    // Skip additional spaces before topic (if present)
+    while (start != std::string::npos && start < command.length() && command[start] == ' ')
+        ++start;
+
+    // Extract topic if provided (including colon)
+    std::string topic = "";
+    bool    colon = false;
+    if (start != std::string::npos && start < command.length())
+    {
+        if (command[start] == ':')
+        {
+            colon = true;
+            ++start; // Skip colon
+        }
+        topic = command.substr(start);
+    }
+
+    // Pass the extracted channel and topic (possibly empty) to the handler
+    topicCommand(userFd, channel, topic, colon);
+}
+
+void Server::topicCommand(int userFd, std::string channelName, std::string topic, bool colon) //commented by Taha compile error!
+{
+    if (channelName.empty() || channelName[0] != '#')
+    {
+        sendError(userFd, ERR_NOSUCHCHANNEL, channelName);
+        return;
+    }
+    std::map<std::string, Channel*>::iterator it = this->_channels.find(channelName);
+    if (it == this->_channels.end())
+    {
+        sendError(userFd, ERR_NOSUCHCHANNEL,  channelName + " :No such channel");
+        return ;
+    }
+    Channel &channel = *(it->second);
+    if (!channel.isUser(userFd))
+    {
+        sendError(userFd, ERR_NOTONCHANNEL, channelName + " :You're not on that channel");
+        return;
+    }
+    if (topic.empty() && !colon)
+    {
+        const std::string &topic = channel.getTopic();
+        if (topic.empty())
+            sendToClient(userFd, RPL_NOTOPIC, " " + channel.getName() + " :No topic is set");
+        else
+            sendToClient(userFd, RPL_TOPIC, " " + channelName + " :" + topic);
+        return;
+    }
+    if (channel.isTopicRestricted() && !channel.isOperator(userFd))
+    {
+        sendError(userFd, ERR_CHANOPRIVSNEEDED, channelName + " :You're not channel operator"); 
+        return;
+    }
+    std::string newTopic = topic; // assumes already parsed with ":" removed
+    if (newTopic.empty())
+        channel.clearTopic();
+    else
+        channel.setTopic(newTopic);
     
-//     std::string msg = ":" + _clients[userFd]->getPrefix() + " TOPIC " + channelName + " :" + newTopic;
-//     broadcastToAll(channel, msg, -1);
+    std::string msg = ":" + _clients[userFd]->getPrefix() + " TOPIC " + channelName + " :" + newTopic;
+    broadcastToAll(channel, msg, -1);
 
-// }
+}
 
-//-------------------------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------
 /* 
     syntax: 
         INVITE <nickname> <channel>
@@ -266,7 +337,7 @@ void Server::kickCommand(int senderFd, const std::vector<std::string>& tokens)
 
     std::string channelName = tokens[1];
     std::string targetNick = tokens[2];
-    std::string reason = (tokens.size() >= 4) ? tokens[3].substr(1) : _clients[senderFd].getNickname();
+    std::string reason = (tokens.size() >= 4) ? tokens[3].substr(1) : _clients[senderFd]->getNickname();
 
     std::map<std::string, Channel*>::iterator it = _channels.find(channelName);
     if (it == _channels.end())
@@ -302,7 +373,7 @@ void Server::kickCommand(int senderFd, const std::vector<std::string>& tokens)
         return;
     }
 
-    std::string msg = ":" + _clients[senderFd].getPrefix() + " KICK " + channelName + " " + targetNick + " :" + reason;
+    std::string msg = ":" + _clients[senderFd]->getPrefix() + " KICK " + channelName + " " + targetNick + " :" + reason;
     channel->broadcastToAll(msg, this);
 
     channel->removeUser(targetFd);

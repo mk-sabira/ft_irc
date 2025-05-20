@@ -11,16 +11,16 @@
 # **************************************************************************** #
 
 C++ = c++
-# CXXFLAGS = -Wall -Wextra -Werror 
+CXXFLAGS = -Wall -Wextra -Werror -fsanitize=address -g 
 #no falgs because of compile error
 NAME = ircserv
-SRC = main.cpp Server.cpp cleaningUtils.cpp Client.cpp processCmd.cpp Channel.cpp server_channel.cpp
+SRC = main.cpp Server.cpp cleaningUtils.cpp Client.cpp processCmd.cpp Channel.cpp server_channel.cpp join.cpp topic.cpp
 OBJ = ${SRC:.cpp=.o}
 
 all: $(NAME)
 
 $(NAME): $(OBJ)
-	$(C++) -o $(NAME) $(OBJ)
+	$(C++) $(CXXFLAGS) -o $(NAME) $(OBJ)
 
 %.o: %.cpp
 	$(C++) -c $< -o $@

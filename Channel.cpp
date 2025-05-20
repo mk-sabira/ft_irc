@@ -2,12 +2,28 @@
 #include "Server.hpp"
 #include "Client.hpp"
 
-Channel::Channel() {}
-Channel::Channel(const std::string& name) : _name(name) {}
+Channel::Channel()
+    : _name(""),
+      _topic(""),
+      _key(""),
+      _userLimit(-1),
+      _inviteOnly(false),
+      _topicRestricted(false)
+{}
+Channel::Channel(const std::string& name)
+    : _name(name),
+      _topic(""),
+      _key(""),
+      _userLimit(-1),
+      _inviteOnly(false),
+      _topicRestricted(false)
+{}
+
 Channel& Channel::operator=(Channel& other) {return *this;}
 Channel::Channel(Channel& other) {}
-Channel::~Channel() {}
 
+
+Channel::~Channel() {}
 
 
 //----------------- Getters -----------------------------
@@ -64,14 +80,61 @@ void Channel::setTopic(const std::string& topic)
     this->_topic = topic;
 }
 
+void Channel::setName(const std::string& channelName)
+{
+        this->_name = channelName;
+
+}
+
+void Channel::setInviteFlag(const char   sign)
+{
+    if (sign == '+')
+        this->_inviteOnly = true;
+    else
+        this->_inviteOnly = false;
+}
+
+void Channel::setRestrictions(const char   sign)
+{
+    if (sign == '+')
+        this->_topicRestricted = true;
+    else
+        this->_topicRestricted = false;
+}
+
+void Channel::setKeyMode(const char   sign, const std::string& key)
+{
+    if (sign == '+')
+        this->_key = key;
+    else
+        this->_key = "";
+    }
+    
+void Channel::setOperatorMode(const char   sign, int userFd)
+{
+    if (sign == '+')
+        this->addOperator(userFd);
+    else
+        this->removeOperator(userFd);
+}
+
+void Channel::setUserLimit(const char   sign, int limit)
+{
+    if (sign == '+')
+        this->_userLimit = limit;
+    else
+        this->_userLimit = -1;
+}
+
         //---------------helper functions---------------
 
- bool Channel::isUser(int clientFd) const
+bool Channel::isUser(int clientFd) const
 {
     if (this->_users.find(clientFd) != this->_users.end())
         return true;
     return false;
 }
+
 bool Channel::isOperator(int clientFd) const
 {
     if (this->_operators.find(clientFd) != this->_operators.end())
@@ -81,9 +144,9 @@ bool Channel::isOperator(int clientFd) const
 
 bool Channel::isInviteOnly() const
 {
-    if (this->inviteOnly)
-        return true;
-    return false;
+    // if (this->_inviteOnly)
+    //     return true;
+    return _inviteOnly;
 }
 
 bool Channel::isInvited(int clientFd) const
@@ -102,7 +165,7 @@ bool Channel::hasKey() const
 
 bool Channel::isFull() const
 {
-    if (this->_users.size() != userLimit)
+    if (this->_users.size() != _userLimit)
         return false;
     return true;
 }
@@ -112,10 +175,12 @@ void Channel::broadcastToAll(const std::string& message, Server* server)
     for (std::map<int, Client*>::iterator it = _users.begin(); it != _users.end(); ++it)
     {
         int clientFd = it->first;
-        server->sendMessage(clientFd, message);
+        server->sendReply(clientFd, message);
     }
 }
+
 //-------------------- JOIN --------------------------
+
 bool Channel::canJoin(int clientFd, const std::string& key)
 {
     if (this->hasKey() && this->getKey() != key)
@@ -124,22 +189,12 @@ bool Channel::canJoin(int clientFd, const std::string& key)
 
 }
 
-// void Channel::addUser(int clientFd)
-// {
-//     Client* client = getClientByFd(clientFd); // client functions
-//     if (!client)
-//         return; // Handle null pointer
-
-//     this->_users.insert(std::pair<int, Client*>(clientFd, client));
-//     _invited.erase(clientFd);
-// }
-
 void Channel::addUser(int clientFd, Client* client) // Taha fixed...
 {
     if (!client)
         return;
-
-    _users.insert(std::pair<int, Client*>(clientFd, client));
+    std::pair<int, Client*> userPair(clientFd, client);
+    _users.insert(userPair);
     _invited.erase(clientFd);
 }
 
@@ -149,17 +204,11 @@ bool Channel::isTopicRestricted() const {
     return this->_topicRestricted;
 }
 
-// void Channel::setTopic(const std::string& topic) { // Taha compile error defined previously!!
-//     this->_topic = topic;
-// }
 
 void Channel::clearTopic() {
     this->_topic.clear();
 }
 
-// std::string Channel::getTopic() const { // compiler error it is declared previously
-//     return this->_topic;
-// }
 
 std::string Channel::getClientPrefix(int fd) const
 {
@@ -184,4 +233,9 @@ void Channel::addInvite(int clientFd)
 void Channel::removeUser(int clientFd)
 {
     this->_users.erase(clientFd);
+}
+
+void Channel::removeOperator(int clientFd)
+{
+    this->_operators.erase(clientFd);
 }

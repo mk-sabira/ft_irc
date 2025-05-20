@@ -12,6 +12,8 @@
 
 #include "Server.hpp"
 #include <cerrno>
+#include <cstring>
+
 // void Server::splitCommand(std::vector<std::string>& tokens, const std::string& command, std::string::size_type start, std::string::size_type end )
 // {
 //     tokens.push_back(command.substr(start, end - start)); // Command name
@@ -84,7 +86,7 @@ void Server::handlePass(int clientFd, const std::vector<std::string>& tokens)
         sendReply(clientFd, " 461 PASS :Not enough parameters");
         return ;
     }
-    if (_clients[clientFd].isAuthenticated())
+    if (_clients[clientFd]->isAuthenticated())
     {
         sendReply(clientFd, " 462 :Unauthorized command (already registered)");
         return ;
@@ -95,7 +97,7 @@ void Server::handlePass(int clientFd, const std::vector<std::string>& tokens)
         removeClient(clientFd);
         return ;
     }
-    _clients[clientFd].setAuthenticated(true);
+    _clients[clientFd]->setAuthenticated(true);
     // std::cout << "Client FD " << clientFd << " authenticated" << std::endl;
 }
 
@@ -145,22 +147,22 @@ void Server::handleNick(int clientFd, const std::vector<std::string>& tokens)
         sendReply(clientFd, errorMess);
         return ;
     }
-    for (std::map<int, Client>::iterator it = _clients.begin(); it != _clients.end(); ++it)
+    for (std::map<int, Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it)
     {
-        if (it->first != clientFd && it->second.getNickname() == tokens[1])
+        if (it->first != clientFd && it->second->getNickname() == tokens[1])
         {
             sendReply(clientFd, "433 " + tokens[1] + " :Nickname is already in use");
             return;
         }
     }
-    _clients[clientFd].setNickname(tokens[1]);
-    if (_clients[clientFd].isAuthenticated() && !_clients[clientFd].getNickname().empty() && !_clients[clientFd].getUsername().empty())
+    _clients[clientFd]->setNickname(tokens[1]);
+    if (_clients[clientFd]->isAuthenticated() && !_clients[clientFd]->getNickname().empty() && !_clients[clientFd]->getUsername().empty())
     {
-        _clients[clientFd].setRegistered(true);
-        sendReply(clientFd, "001 " + _clients[clientFd].getNickname() + " :Welcome to the IRC server");
-        sendReply(clientFd, "002 " + _clients[clientFd].getNickname() + " :Your host is " + _serverName);
-        sendReply(clientFd, "003 " + _clients[clientFd].getNickname() + " :This server was created today");
-        sendReply(clientFd, "004 " + _clients[clientFd].getNickname() + " :" + _serverName + " 1.0");
+        _clients[clientFd]->setRegistered(true);
+        sendReply(clientFd, "001 " + _clients[clientFd]->getNickname() + " :Welcome to the IRC server");
+        sendReply(clientFd, "002 " + _clients[clientFd]->getNickname() + " :Your host is " + _serverName);
+        sendReply(clientFd, "003 " + _clients[clientFd]->getNickname() + " :This server was created today");
+        sendReply(clientFd, "004 " + _clients[clientFd]->getNickname() + " :" + _serverName + " 1.0");
     }
 }
 
@@ -221,26 +223,26 @@ bool Server::validateUser(const std::vector<std::string>& tokens, std::string& e
 
 void Server::handleUser(int clientFd, const std::vector<std::string>& tokens)
 {
-    // if (_clients[clientFd].isRegistered())
-    // {
-    //     sendReply(clientFd, "462 :Unauthorized command (already registered)");
-    //     return;
-    // }
+    if (_clients[clientFd]->isRegistered())
+    {
+        sendToClient(clientFd, ERR_ALREADYREGISTRED, ":Unauthorized command (already registered)");
+        return;
+    }
     std::string errorMsg;
     if (!validateUser(tokens, errorMsg))
     {
         sendReply(clientFd, errorMsg);
         return;
     }
-    _clients[clientFd].setUsername(tokens[1]);
-    _clients[clientFd].setRealname(tokens[4]);
-    if (_clients[clientFd].isAuthenticated() && !_clients[clientFd].getNickname().empty() && !_clients[clientFd].getUsername().empty())
+    _clients[clientFd]->setUsername(tokens[1]);
+    _clients[clientFd]->setRealname(tokens[4]);
+    if (_clients[clientFd]->isAuthenticated() && !_clients[clientFd]->getNickname().empty() && !_clients[clientFd]->getUsername().empty())
     {
-        _clients[clientFd].setRegistered(true);
-        sendReply(clientFd, "001 " + _clients[clientFd].getNickname() + " :Welcome to the IRC server");
-        sendReply(clientFd, "002 " + _clients[clientFd].getNickname() + " :Your host is " + _serverName);
-        sendReply(clientFd, "003 " + _clients[clientFd].getNickname() + " :This server was created today");
-        sendReply(clientFd, "004 " + _clients[clientFd].getNickname() + " :" + _serverName + " 1.0");
+        _clients[clientFd]->setRegistered(true);
+        sendReply(clientFd, "001 " + _clients[clientFd]->getNickname() + " :Welcome to the IRC server");
+        sendReply(clientFd, "002 " + _clients[clientFd]->getNickname() + " :Your host is " + _serverName);
+        sendReply(clientFd, "003 " + _clients[clientFd]->getNickname() + " :This server was created today");
+        sendReply(clientFd, "004 " + _clients[clientFd]->getNickname() + " :" + _serverName + " 1.0");
     }
 }
 
@@ -272,11 +274,11 @@ void Server::handlePrivmsg(int senderFd, const std::vector<std::string>& tokens)
     std::string targetNick = tokens[1];
     std::string message = tokens[2];
 
-    for (std::map<int, Client>::iterator it = _clients.begin(); it != _clients.end(); ++it)
+    for (std::map<int, Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it)
     {
-        if (it->second.getNickname() == targetNick)
+        if (it->second->getNickname() == targetNick)
         {
-            std::string msgToSend = ":" + _clients[senderFd].getNickname() + " PRIVMSG " + targetNick + " :" + message + "\r\n";
+            std::string msgToSend = ":" + _clients[senderFd]->getNickname() + " PRIVMSG " + targetNick + " :" + message + "\r\n";
             send(it->first, msgToSend.c_str(), msgToSend.size(), 0);
             return;
         }

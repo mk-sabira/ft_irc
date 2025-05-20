@@ -12,7 +12,15 @@
 
 #include "Client.hpp"
 
-Client::Client() {}
+Client::Client() {
+    _fd = -1;
+    _buffer = "";
+    _nickname = "";
+    _username = "";
+    _realname = ""; //Stores the client’s realname (from USER).
+    _registered = false;
+    _authenticated = false;
+}
 
 Client::~Client() {}
 

@@ -127,9 +127,9 @@ void Server::acceptNewClient()
 
     _fds.push_back(clientPollFd);
 
-    Client client;
-    client.setFd(clientFd);
-    client.setAuthenticated(false);
+    Client* client = new Client();
+    client->setFd(clientFd);
+    client->setAuthenticated(false);
     _clients[clientFd] = client;
     std::cout << CYAN << "New client connected: FD = " << clientFd << RESET << std::endl;
 }
@@ -149,7 +149,7 @@ void Server::recieveClientData(int clientFd)
             std::cout << "No data on FD " << clientFd << " (EAGAIN)" << std::endl;   
             return ;
         }
-        std::cerr << "Error reading from client FD: " << clientFd << ": " << strerror(errno) << std::endl;
+        std::cerr << "Error reading from client FD: " << clientFd << ": " << std::strerror(errno) << std::endl;
         removeClient(clientFd);
         return ;
     }
@@ -160,9 +160,9 @@ void Server::recieveClientData(int clientFd)
     }
     buffer[bytesRead] = '\0';
     
-    _clients[clientFd].getBuffer().append(buffer, bytesRead);
+    _clients[clientFd]->getBuffer().append(buffer, bytesRead);
 
-    std::string& clientInput = _clients[clientFd].getBuffer();
+    std::string& clientInput = _clients[clientFd]->getBuffer();
     size_t pos;
 
     while ((pos = clientInput.find('\n')) != std::string::npos)
@@ -204,8 +204,8 @@ void Server::processCommand(int clientFd, const std::string& command)
     }
     else if (tokens[0] == "USER" || tokens[0] == "user")
     {
-        // std::cout << "USER name: " << GREEN << tokens[1] << RESET << std::endl;
-        // std::cout << "Real name: " << GREEN << tokens[4] << RESET << std::endl;
+        std::cout << "USER name: " << GREEN << tokens[1] << RESET << std::endl;
+        std::cout << "Real name: " << GREEN << tokens[4] << RESET << std::endl;
         handleUser(clientFd, tokens);
     }
     else if (tokens[0] == "PING" || tokens[0] == "ping")
@@ -219,18 +219,19 @@ void Server::processCommand(int clientFd, const std::string& command)
     }
     else if (tokens[0] == "JOIN")  // compilation Error Taha
 	{
-	    if (tokens.size() < 2)
-	    {
-	        sendReply(clientFd, "461 JOIN :Not enough parameters");
-	        return;
-	    }
-	    std::string key = (tokens.size() > 2) ? tokens[2] : "";
-	    joinCommand(clientFd, tokens[1], key);
+	    // if (tokens.size() < 2)
+	    // {
+	    //     sendReply(clientFd, "461 JOIN :Not enough parameters");
+	    //     return;
+	    // }
+	    // std::string key = (tokens.size() > 2) ? tokens[2] : "";
+	    parseJoinCommand(clientFd, command);
+
 	}
-	// else if (tokens[0] == "TOPIC") // compilation Error Taha
-	// {
-	//     topicCommand(clientFd, tokens);
-	// }
+	else if (tokens[0] == "TOPIC") // compilation Error Taha
+	{
+	    parseTopicCommand(clientFd, command);
+	}
 	// else if (tokens[0] == "INVITE") // compilation Error Taha
 	// {
 	//     inviteCommand(clientFd, tokens);
@@ -286,32 +287,28 @@ const char* Server::PortOutOfBound::what() const throw()
 ///------ Taha for the channel-------
 void Server::sendError(int userFd, int errorCode, const std::string& message)
 {
-    std::string nickname = _clients[userFd].getNickname();
+    std::string nickname = _clients[userFd]->getNickname();
     std::stringstream ss;
-    ss << ":" << _serverName << " " << errorCode << " "
+    ss  << errorCode << " "
        << (nickname.empty() ? "*" : nickname) << " "
        << message;
     sendReply(userFd, ss.str());
 }
 
-void Server::sendMessage(int fd, const std::string& message)
-{
-    send(fd, message.c_str(), message.length(), 0);
-}
 
 void Server::sendToClient(int fd, int code, const std::string& message)
 {
     std::stringstream ss;
-    ss << ":" << _serverName << " " << code << " " << _clients[fd].getNickname() << " " << message << "\r\n";
+    ss << code << " " << _clients[fd]->getNickname() << " " << message << "\r\n";
     sendReply(fd, ss.str());
 }
 
 Client* Server::getClientByNickname(const std::string& nickname)
 {
-    for (std::map<int, Client>::iterator it = _clients.begin(); it != _clients.end(); ++it)
+    for (std::map<int, Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it)
     {
-        if (it->second.getNickname() == nickname)
-            return &it->second;
+        if (it->second->getNickname() == nickname)
+            return it->second;
     }
     return NULL;
 }
