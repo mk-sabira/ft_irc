@@ -81,7 +81,7 @@ class Channel
         bool	isInvited(int clientFd) const;
         bool	isTopicRestricted() const;
         bool	isFull() const;
-        bool	canJoin(int clientFd, const std::string& key);
+        bool	canJoin(const std::string& key);
         bool	hasKey() const;
         void	removeUser(int clientFd);
         void	removeOperator(int clientFd);

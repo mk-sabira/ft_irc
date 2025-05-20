@@ -157,7 +157,7 @@ void Server::joinCommand(int userFd, std::string channelName, std::string key)
             sendToClient(userFd, ERR_INVITEONLYCHAN, channelName + ": user not invited");
             return;
         }
-        if (!channel->canJoin(userFd, key)){
+        if (!channel->canJoin(key)){
             sendToClient(userFd, ERR_BADCHANNELKEY, channelName + ": wrong key");
             return;
         }
@@ -468,7 +468,7 @@ void Server::modeCommand(int userFd, const std::vector<std::string>& tokens)
 					//error
 					return ;
 				}
-				channel.setOperatorMode(sign, userFd);
+				channel.setOperatorMode(sign, getClientByNickname(tokens[3])->getFd());
 				break;
 			}
 			case 'l':
@@ -479,7 +479,11 @@ void Server::modeCommand(int userFd, const std::vector<std::string>& tokens)
 					return ;
 				}
                 if (sign == '+')
-				    channel.setUserLimit(sign, stoi(tokens[3]));
+                {
+                    int limit = 0;
+                    stringToInt(tokens[3], limit);
+				    channel.setUserLimit(sign, limit);
+                }
                 else
 				    channel.setUserLimit(sign, -1);
 				break;

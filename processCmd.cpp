@@ -207,7 +207,8 @@ bool Server::validateUser(const std::vector<std::string>& tokens, std::string& e
     // Validate mode: numeric, 0, 4, 8, or 12 //discover more about it
     int modeVal = 0;
     try{
-        modeVal = std::stoi(mode);
+        // modeVal = std::stoi(mode);
+        stringToInt(mode, modeVal);
     }
     catch (...)
     { 

@@ -20,8 +20,10 @@ Channel::Channel(const std::string& name)
       _inviteOnly(false),
       _topicRestricted(false)
 {}
-Channel& Channel::operator=(Channel& other) {return *this;}
-Channel::Channel(Channel& other) {}
+Channel& Channel::operator=(Channel& other) {
+    (void)other;
+    return *this;}
+Channel::Channel(Channel& other) { (void) other;}
 Channel::~Channel() {}
 
 
@@ -168,7 +170,7 @@ bool Channel::isFull() const
 {
     if (_userLimit == -1)
         return false;
-    if (this->_users.size() != _userLimit)
+    if (this->_users.size() !=(unsigned int) _userLimit)
         return false;
     return true;
 }
@@ -184,7 +186,7 @@ void Channel::broadcastToAll(const std::string& message, Server* server)
 
 //-------------------- Helper Functions --------------------------
 
-bool Channel::canJoin(int clientFd, const std::string& key)
+bool Channel::canJoin(const std::string& key)
 {
     if (this->hasKey() && this->getKey() != key)
         return false;
