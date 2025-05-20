@@ -119,10 +119,12 @@ void Channel::setOperatorMode(const char   sign, int userFd)
 
 void Channel::setUserLimit(const char   sign, int limit)
 {
-    if (sign == '+')
-        this->_userLimit = limit;
-    else
-        this->_userLimit = -1;
+    if (sign == '+' && limit < 1)
+    {
+        //error
+        return ;
+    }
+    this->_userLimit = limit;
 }
 
         //---------------helper functions---------------
@@ -164,6 +166,8 @@ bool Channel::hasKey() const
 
 bool Channel::isFull() const
 {
+    if (_userLimit == -1)
+        return false;
     if (this->_users.size() != _userLimit)
         return false;
     return true;

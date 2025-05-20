@@ -240,10 +240,10 @@ void Server::processCommand(int clientFd, const std::string& command)
 	{
 	    kickCommand(clientFd, tokens);
 	}
-	// else if (tokens[0] == "MODE") // compilation Error Taha
-	// {
-	//     modeCommand(clientFd, tokens);
-	// }
+	else if (tokens[0] == "MODE") // compilation Error Taha
+	{
+	    modeCommand(clientFd, tokens);
+	}
     else
     {
         std::cout << "Unknown cout: " << YELLOW << tokens[0] << RESET << std::endl;

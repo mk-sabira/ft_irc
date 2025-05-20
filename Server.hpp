@@ -105,6 +105,8 @@ class Server
 	    void    topicCommand(int userFd, std::string channelName, std::string topic, bool colon);
 	    void    kickCommand(int senderFd, const std::vector<std::string>& tokens);
 	    void    inviteCommand(int senderFd, const std::vector<std::string>& tokens);
+		void	modeCommand(int userFd, const std::vector<std::string>& tokens);
+
 	    
 	    //------ CHANNEL Taha --------//
 	    

@@ -220,19 +220,19 @@ void Server::topicCommand(int userFd, std::string channelName, std::string topic
 {
     if (channelName.empty() || channelName[0] != '#')
     {
-        sendError(userFd, ERR_NOSUCHCHANNEL, channelName);
+        sendToClient(userFd, ERR_NOSUCHCHANNEL, channelName);
         return;
     }
     std::map<std::string, Channel*>::iterator it = this->_channels.find(channelName);
     if (it == this->_channels.end())
     {
-        sendError(userFd, ERR_NOSUCHCHANNEL,  channelName + " :No such channel");
+        sendToClient(userFd, ERR_NOSUCHCHANNEL,  channelName + " :No such channel");
         return ;
     }
     Channel &channel = *(it->second);
     if (!channel.isUser(userFd))
     {
-        sendError(userFd, ERR_NOTONCHANNEL, channelName + " :You're not on that channel");
+        sendToClient(userFd, ERR_NOTONCHANNEL, channelName + " :You're not on that channel");
         return;
     }
     if (topic.empty() && !colon)
@@ -246,7 +246,7 @@ void Server::topicCommand(int userFd, std::string channelName, std::string topic
     }
     if (channel.isTopicRestricted() && !channel.isOperator(userFd))
     {
-        sendError(userFd, ERR_CHANOPRIVSNEEDED, channelName + " :You're not channel operator"); 
+        sendToClient(userFd, ERR_CHANOPRIVSNEEDED, channelName + " :You're not channel operator"); 
         return;
     }
     std::string newTopic = topic; // assumes already parsed with ":" removed
@@ -377,4 +377,102 @@ void Server::kickCommand(int senderFd, const std::vector<std::string>& tokens)
     channel->broadcastToAll(msg, this);
 
     channel->removeUser(targetFd);
+}
+
+void Server::modeCommand(int userFd, const std::vector<std::string>& tokens)
+{
+	if (tokens.size() < 3)
+	{
+		// return the current modes.
+		return ;
+
+		/*
+			Code		324
+			Name		RPL_CHANNELMODEIS
+			Description	Returned when a client requests to view the current modes of a channel.
+			Format:		 :server 324 <nick> <channel> <modes> [params]
+		*/
+	}
+	std::map<std::string, Channel*>::iterator it = _channels.find(tokens[1]);
+    if (it == _channels.end())
+    {
+        sendToClient(userFd, ERR_NOSUCHCHANNEL, tokens[1] + " :No such channel");
+        return;
+    }
+
+    Channel& channel = *(it->second);
+	if (!channel.isUser(userFd))
+    {
+        sendToClient(userFd, ERR_USERONCHANNEL, tokens[1] + " :You're not on that channel");
+        return;
+    }
+	if (!channel.isOperator(userFd))
+    {
+        sendToClient(userFd, ERR_CHANOPRIVSNEEDED, tokens[1] + " :You're not channel operator");
+        return;
+    }
+	char	sign = tokens[2][0];
+	if (sign != '+' && sign != '-')
+	{
+		//error 
+		return ;
+	}
+	for (int i = 1; tokens[2][i]; i++)
+	{
+		char mode = tokens[2][i];
+		switch (mode)
+		{
+			case 'i':
+			{
+				channel.setInviteFlag(sign);
+				break;
+			}
+			case 't':
+				channel.setRestrictions(sign);
+				break;
+			case 'k':
+			{
+				if (tokens.size() < 4 && sign == '+')
+				{
+					//error
+					return ;
+				}
+				channel.setKeyMode(sign, tokens[3]);
+				break;
+			}
+			case 'o':
+			{
+				if (tokens.size() < 4)
+				{
+					//error
+					return ;
+				}
+				channel.setOperatorMode(sign, userFd);
+				break;
+			}
+			case 'l':
+			{
+				if (tokens.size() < 4 && sign == '+')
+				{
+					//error
+					return ;
+				}
+                if (sign == '+')
+				    channel.setUserLimit(sign, stoi(tokens[3]));
+                else
+				    channel.setUserLimit(sign, -1);
+				break;
+			}
+		
+			default:
+			{
+				//error
+				return ;
+				// break;
+			}
+		}
+
+	}
+
+
 }
