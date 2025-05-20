@@ -235,3 +235,9 @@ void Channel::removeOperator(int clientFd)
 {
     this->_operators.erase(clientFd);
 }
+
+void    Channel::kickUser(int clientFd)
+{
+    this->removeOperator(clientFd);
+    this->removeUser(clientFd);
+}

@@ -22,6 +22,7 @@
 #include <fcntl.h>
 #include <vector>
 #include <map>
+#include <sstream>  // Needed for std::istringstream
 
 
 
@@ -112,5 +113,7 @@ class Server
 	    
 	    std::string getClientPrefix(int fd) const;
 };
+
+bool stringToInt(const std::string& str, int& result);
 
 #endif

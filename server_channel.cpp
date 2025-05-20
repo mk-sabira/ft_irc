@@ -105,6 +105,28 @@ void Server::parseJoinCommand(int userFd, const std::string& command)
 
 void Server::joinCommand(int userFd, std::string channelName, std::string key)
 {
+    if (channelName == "0")
+    {
+        for (std::map<std::string, Channel*>::iterator it = _channels.begin(); it != _channels.end(); )
+        {
+            Channel* channel = it->second;
+            if (channel->isUser(userFd)) {
+                channel->kickUser(userFd);
+
+                std::string partMsg = ":" + _clients[userFd]->getPrefix() + " PART " + channel->getName();
+                channel->broadcastToAll(partMsg, this);
+
+                // If channel is empty after removal, delete it
+                if (channel->getUserFds().empty()) {
+                    delete channel;
+                    _channels.erase(it++);
+                    continue;
+                }
+            }
+            ++it;
+        }
+        return;
+    }
     if (channelName.empty() || channelName[0] != '#')
     {
         sendToClient(userFd, ERR_NOSUCHCHANNEL, channelName);
@@ -375,8 +397,7 @@ void Server::kickCommand(int senderFd, const std::vector<std::string>& tokens)
 
     std::string msg = ":" + _clients[senderFd]->getPrefix() + " KICK " + channelName + " " + targetNick + " :" + reason;
     channel->broadcastToAll(msg, this);
-
-    channel->removeUser(targetFd);
+    channel->kickUser(targetFd);
 }
 
 void Server::modeCommand(int userFd, const std::vector<std::string>& tokens)

@@ -14,6 +14,16 @@
 #include <cerrno>
 Server::~Server()
 {
+    // Delete all Clients
+    for (std::map<int, Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it)
+        delete it->second;
+    _clients.clear();
+
+    // Delete all Channels
+    for (std::map<std::string, Channel*>::iterator it = _channels.begin(); it != _channels.end(); ++it)
+        delete it->second;
+    _channels.clear();
+
     if (_serverFd != -1)
         close(_serverFd);
 }

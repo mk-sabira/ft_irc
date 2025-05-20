@@ -57,6 +57,19 @@
 // }
 
 
+
+bool stringToInt(const std::string& str, int& result)
+{
+    std::istringstream iss(str);  // Create a string stream from the input string
+    iss >> result;                // Try to extract an int from the string
+
+    // Check for conversion failure or extra characters
+    if (iss.fail() || !iss.eof())
+        return false;             // Conversion failed or leftover characters exist
+
+    return true;                  // Successful conversion
+}
+
 void Server::splitCommand(std::vector<std::string>& tokens, const std::string& command, std::string::size_type start, std::string::size_type end)
 {
     tokens.push_back(command.substr(start, end - start)); // Command name
@@ -193,7 +206,7 @@ bool Server::validateUser(const std::vector<std::string>& tokens, std::string& e
 
     // Validate mode: numeric, 0, 4, 8, or 12 //discover more about it
     int modeVal = 0;
-    try {
+    try{
         modeVal = std::stoi(mode);
     }
     catch (...)

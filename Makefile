@@ -23,7 +23,7 @@ $(NAME): $(OBJ)
 	$(C++) $(CXXFLAGS) -o $(NAME) $(OBJ)
 
 %.o: %.cpp
-	$(C++) -c $< -o $@
+	$(C++) $(CXXFLAGS) -c $< -o $@
 
 clean:
 	rm -rf $(OBJ)

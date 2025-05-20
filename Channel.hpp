@@ -92,11 +92,7 @@ class Channel
         void	inviteUser(int clientFd);
         void 	kickUser(int targetFd);
         void    broadcastToAll(const std::string& message, Server* server);
-    };
-
-
-
-// void sendError(int userFd, int errorCode, const std::string& target, const std::string& message = "");
+};
 
 
 #endif
