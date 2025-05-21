@@ -17,7 +17,7 @@ Client::Client() {
     _buffer = "";
     _nickname = "";
     _username = "";
-    _realname = ""; //Stores the client’s realname (from USER).
+    _realname = ""; //Stores the client's realname (from USER).
     _registered = false;
     _authenticated = false;
 }
@@ -78,9 +78,9 @@ bool Client::isRegistered() const
 //     return this->_nickname + "!" + this->_username + "@" + this->_hostname;
 // }
 
-std::string Client::getPrefix() const // Taha channel
+std::string Client::getPrefix() const
 {
-    return _nickname + "!" + _username + "@localhost";  // Use "localhost" if hostname is not available
+    return _nickname + "!" + _username + "@" + _hostname;
 }
 
 // setters
@@ -117,4 +117,10 @@ void Client::setRealname(const std::string &realname)
 void Client::setRegistered(bool registered)
 {
     _registered = registered;
+}
+
+// Taha trying to fix lime chat
+void Client::setHostname(const std::string& hostname)
+{
+    _hostname = hostname;
 }

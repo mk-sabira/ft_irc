@@ -22,7 +22,8 @@ class Client
         std::string _buffer;
         std::string _nickname;
         std::string _username;
-        std::string _realname; //Stores the client’s realname (from USER).
+        std::string _realname; //Stores the client's realname (from USER).
+        std::string _hostname; // Taha trying to fix lime chat
         bool _registered;
         bool _authenticated;
     
@@ -40,6 +41,7 @@ class Client
         void setUsername(const std::string& username);
         void setRealname(const std::string& realname);
         void setRegistered(bool registered);
+        void setHostname(const std::string& hostname); // Taha trying to fix lime chat
         
         // Getter
         std::string& getBuffer();

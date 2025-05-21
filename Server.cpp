@@ -12,6 +12,8 @@
 
 #include "Server.hpp"
 #include <cerrno>
+#include <arpa/inet.h>
+
 Server::~Server()
 {
     // Delete all Clients
@@ -140,6 +142,7 @@ void Server::acceptNewClient()
     Client* client = new Client();
     client->setFd(clientFd);
     client->setAuthenticated(false);
+    client->setHostname(inet_ntoa(clientAddr.sin_addr)); // taha trying to fix lime chat
     _clients[clientFd] = client;
     std::cout << CYAN << "New client connected: FD = " << clientFd << RESET << std::endl;
 }

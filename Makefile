@@ -11,7 +11,7 @@
 # **************************************************************************** #
 
 C++ = c++
-CXXFLAGS = -Wall -Wextra -Werror -fsanitize=address -g --std=c++98
+CXXFLAGS = -Wall -Wextra -Werror --std=c++98
 #no falgs because of compile error
 NAME = ircserv
 SRC = main.cpp Server.cpp cleaningUtils.cpp Client.cpp processCmd.cpp Channel.cpp server_channel.cpp 

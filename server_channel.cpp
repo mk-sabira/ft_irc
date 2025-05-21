@@ -154,31 +154,34 @@ void Server::joinCommand(int userFd, std::string channelName, std::string key)
             return;
             
         if (channel->isInviteOnly() && !channel->isInvited(userFd)) {
-            sendToClient(userFd, ERR_INVITEONLYCHAN, channelName + ": user not invited");
+            sendToClient(userFd, ERR_INVITEONLYCHAN, channelName + " :Cannot join channel (+i)");
             return;
         }
         if (!channel->canJoin(key)){
-            sendToClient(userFd, ERR_BADCHANNELKEY, channelName + ": wrong key");
+            sendToClient(userFd, ERR_BADCHANNELKEY, channelName + " :Cannot join channel (+k)");
             return;
         }
         if (channel->isFull()) {
-            sendToClient(userFd, ERR_CHANNELISFULL, channelName + ": channel is full");
+            sendToClient(userFd, ERR_CHANNELISFULL, channelName + " :Cannot join channel (+l)");
             return;
         }
         channel->addUser(userFd, this->_clients[userFd]);
     }
-    std::string prefix = channel->getClientPrefix(userFd);
-    std::string joinMsg = ":" + prefix + " JOIN " + channelName;
+
+    // Send JOIN message with full user information
+    std::string joinMsg = ":" + _clients[userFd]->getPrefix() + " JOIN :" + channelName;
     channel->broadcastToAll(joinMsg, this);
 
+    // Send topic information
     if (!(channel->getTopic().empty()))
-        sendToClient(userFd, RPL_TOPIC , " " + channelName + " :" + channel->getTopic());
+        sendToClient(userFd, RPL_TOPIC, channelName + " :" + channel->getTopic());
     else
-        sendToClient(userFd, RPL_NOTOPIC , " " + channelName);
+        sendToClient(userFd, RPL_NOTOPIC, channelName + " :No topic is set");
 
+    // Send user list
     std::string userList = vecToStr(channel->getNicknamesWithPrefixes());
-    sendToClient(userFd, RPL_NAMREPLY , " = " + channelName + " :" + userList); // send to client
-    sendToClient(userFd, RPL_ENDOFNAMES , " " + channelName + " :End of /NAMES list."); // send to client
+    sendToClient(userFd, RPL_NAMREPLY, "= " + channelName + " :" + userList);
+    sendToClient(userFd, RPL_ENDOFNAMES, channelName + " :End of /NAMES list");
 }
 
 //--------------------------------------------------------------------------------
