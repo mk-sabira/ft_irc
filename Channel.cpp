@@ -184,6 +184,15 @@ void Channel::broadcastToAll(const std::string& message, Server* server)
     }
 }
 
+void Channel::boolBroadCastToAll(const std::string& message, Server* server, bool useServerPrefix)
+{
+    for (std::map<int, Client*>::iterator it = _users.begin(); it != _users.end(); ++it)
+    {
+        int clientFd = it->first;
+        server->boolSendReply(clientFd, message, useServerPrefix);
+    }
+}
+
 //-------------------- Helper Functions --------------------------
 
 bool Channel::canJoin(const std::string& key)

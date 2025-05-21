@@ -14,7 +14,7 @@
 # define ERR_KEYSET  467 // Channel key already set
 # define ERR_NEEDMOREPARAMS  461  // not enough parameters
 # define ERR_ALREADYREGISTRED  462  // :Unauthorized command (already registered)
-# define ERR_CHANNELISFULL  471 // full channel, Cannot join
+# define ERR_CHANNELISFULL  471 // full channel, Cannot 
 # define ERR_UNKNOWNMODE  472 // unknown mode char
 # define ERR_INVITEONLYCHAN  473 // not invited, Cannot join
 # define ERR_BADCHANNELKEY  475 // wrong key, Cannot join
@@ -92,6 +92,7 @@ class Channel
         void	inviteUser(int clientFd);
         void 	kickUser(int targetFd);
         void    broadcastToAll(const std::string& message, Server* server);
+        void    boolBroadCastToAll(const std::string& message, Server* server, bool useServerPrefix); // taha fixing limechat
 };
 
 

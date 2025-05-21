@@ -316,6 +316,13 @@ void Server::sendToClient(int fd, int code, const std::string& message)
     sendReply(fd, ss.str());
 }
 
+void Server::boolSendToClient(int fd, int code, const std::string& message)
+{
+    std::stringstream ss;
+    ss << code << " " << _clients[fd]->getNickname() << " " << message;
+    boolSendReply(fd, ss.str(), true);
+}
+
 Client* Server::getClientByNickname(const std::string& nickname)
 {
     for (std::map<int, Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it)

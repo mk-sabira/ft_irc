@@ -94,9 +94,10 @@ class Server
 	    
 	    //----- helper functions----------- // Dina Channel
 		void sendReply(int clientFd, const std::string& message);
+		void boolSendReply(int clientFd, const std::string& message, bool useServerPrefix); // taha fixing limechat
 	    void    sendError(int userFd, int errorCode, const std::string& message);
 	    void    sendToClient(int fd, int code, const std::string& message);
-	
+		void    boolSendToClient(int fd, int code, const std::string& message);
 	    //-------- CHANNEL ---------------------- // Dina channel
 	    void broadcastToAll(const Channel& channel, const std::string& msg, int excludeFd); // Taha compilation error
 		

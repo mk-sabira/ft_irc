@@ -103,7 +103,7 @@ void Server::parseJoinCommand(int userFd, const std::string& command)
     }
 }
 
-void Server::joinCommand(int userFd, std::string channelName, std::string key)
+void Server::joinCommand(int userFd, std::string channelName, std::string key) 
 {
     if (channelName == "0")
     {
@@ -114,9 +114,8 @@ void Server::joinCommand(int userFd, std::string channelName, std::string key)
                 channel->kickUser(userFd);
 
                 std::string partMsg = ":" + _clients[userFd]->getPrefix() + " PART " + channel->getName();
-                channel->broadcastToAll(partMsg, this);
+                channel->boolBroadCastToAll(partMsg, this, false); // Use user prefix
 
-                // If channel is empty after removal, delete it
                 if (channel->getUserFds().empty()) {
                     delete channel;
                     _channels.erase(it++);
@@ -127,22 +126,22 @@ void Server::joinCommand(int userFd, std::string channelName, std::string key)
         }
         return;
     }
+
     if (channelName.empty() || channelName[0] != '#')
     {
-        sendToClient(userFd, ERR_NOSUCHCHANNEL, channelName);
+        boolSendToClient(userFd, ERR_NOSUCHCHANNEL, channelName);
         return;
     }
 
     Channel* channel = NULL;
-    
+
     if (_channels.find(channelName) == _channels.end())
     {
         channel = new Channel(channelName);
         if (!key.empty())
             channel->setKey(key);
-        
-        _channels.insert(std::pair<std::string, Channel*>(channelName, channel));
 
+        _channels.insert(std::make_pair(channelName, channel));
         channel->addUser(userFd, this->_clients[userFd]);
         channel->addOperator(userFd);
     }
@@ -152,37 +151,38 @@ void Server::joinCommand(int userFd, std::string channelName, std::string key)
 
         if (channel->isUser(userFd))
             return;
-            
+
         if (channel->isInviteOnly() && !channel->isInvited(userFd)) {
-            sendToClient(userFd, ERR_INVITEONLYCHAN, channelName + " :Cannot join channel (+i)");
+            boolSendToClient(userFd, ERR_INVITEONLYCHAN, channelName + " :Cannot join channel (+i)");
             return;
         }
+
         if (!channel->canJoin(key)){
-            sendToClient(userFd, ERR_BADCHANNELKEY, channelName + " :Cannot join channel (+k)");
+            boolSendToClient(userFd, ERR_BADCHANNELKEY, channelName + " :Cannot join channel (+k)");
             return;
         }
+
         if (channel->isFull()) {
-            sendToClient(userFd, ERR_CHANNELISFULL, channelName + " :Cannot join channel (+l)");
+            boolSendToClient(userFd, ERR_CHANNELISFULL, channelName + " :Cannot join channel (+l)");
             return;
         }
+
         channel->addUser(userFd, this->_clients[userFd]);
     }
 
-    // Send JOIN message with full user information
     std::string joinMsg = ":" + _clients[userFd]->getPrefix() + " JOIN :" + channelName;
-    channel->broadcastToAll(joinMsg, this);
+    channel->boolBroadCastToAll(joinMsg, this, false);  // Don't prepend server name
 
-    // Send topic information
     if (!(channel->getTopic().empty()))
-        sendToClient(userFd, RPL_TOPIC, channelName + " :" + channel->getTopic());
+        boolSendToClient(userFd, RPL_TOPIC, channelName + " :" + channel->getTopic());
     else
-        sendToClient(userFd, RPL_NOTOPIC, channelName + " :No topic is set");
+        boolSendToClient(userFd, RPL_NOTOPIC, channelName + " :No topic is set");
 
-    // Send user list
     std::string userList = vecToStr(channel->getNicknamesWithPrefixes());
-    sendToClient(userFd, RPL_NAMREPLY, "= " + channelName + " :" + userList);
-    sendToClient(userFd, RPL_ENDOFNAMES, channelName + " :End of /NAMES list");
+    boolSendToClient(userFd, RPL_NAMREPLY, "= " + channelName + " :" + userList);
+    boolSendToClient(userFd, RPL_ENDOFNAMES, channelName + " :End of /NAMES list");
 }
+
 
 //--------------------------------------------------------------------------------
 void Server::parseTopicCommand( int userFd, const std::string& command)
