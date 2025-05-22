@@ -1,18 +1,54 @@
-JOIN:
-- JOIN name key
-- JOIN name1,nam20 key
-- JOIN name1,nam20 key1,key2
-- JOIN 0
-- JOIN 
-- Join a new channel (channel creation)
-- Join an existing channel
-- Join multiple channels 
-- Join a channel with a key
-- join multiple channels with keys
-- Join with wrong key
-- JOIN 0 (leave all channels)
-- Invalid channel name
-- Join invite-only channel without invitation
-- Join full channel
-- Already in channel
-- Join with too many keys
+❌ unknown command when writing spaces before a valid command "    /topic"
+JOIN: 
+    - Join a new channel (channel creation) ✅
+    - Join an existing channel ✅
+    - Invalid channel name ✅
+    - Join a channel with correct key ✅
+    - Join invite-only channel with invitation ✅
+    - join multiple channels with keys ✅
+    - Join multiple channels ✅ 
+    - join a channel user is already in ✅
+    - JOIN 0 (leave all channels) ✅
+    - Join with too many keys ✅
+    - Join with wrong key ___ correct but different message
+        our output: ":irc.server 475 dina #secret :Cannot join channel (+k)"
+        gpt LimeChat:   ":ircserver 475 Nickname #secret :wrong key"
+    - Join invite-only channel without invitation ___ correct but different message
+        our output: ":irc.server 473 dina #general :Cannot join channel (+i)"
+        gpt LimeChat:   ":ircserver 473 Nickname #inviteonly :user not invited"
+    - Join full channel ___ correct but different message
+        our output: ":irc.server 471 dina #general :Cannot join channel (+l)"
+        gpt LimeChat:   ":ircserver 471 Nickname #limited :channel is full"
+
+TOPIC:
+    -  Viewing topic when no topic is set ✅
+    -  Setting a new topic as channel operator ✅
+    -  Viewing topic when topic is set ✅
+    -  Clearing the topic ✅
+    -  Changing topic as non-operator in +t channel ✅
+    -  Missing channel name  ✅
+    -  Channel does not exist  ✅
+    -  Trying to set a topic without being on the channel  ✅
+    ** Topic history (who set it and when) is fetched via RPL_TOPIC (332) and RPL_TOPICWHOTIME (333).
+    ":irc.server 332 <nick> #channel :<topic>"
+    ":irc.server 333 <nick> #channel <set_by> <timestamp>"
+
+INVITE:
+    - Operator invites a user to an invite-only channel ✅
+    - Operator invites a user to a public channel ✅
+    - Inviting a user already invited before joining ✅
+    - Non-operator tries to invite to invite-only channel ✅
+    - User is already in the channel ✅
+    - Inviting to a non-existent channel ✅
+    - Target nickname does not exist ✅
+    - Missing parameters (with no,one, ore two spaces after the command) (but it should work correctly in all cases- see next case)✅
+    - "/invite      " more than 2 spaces after the command ❌
+        output : No such nick
+        correct output : Not enough parameters
+    - "/invite existuser  " more than 1 space after the nick ❌
+        output : No such channel
+        correct output : Not enough parameters
+
+KICK:
+    - Kick a user from a channel (no comment)
+        * send raw message to server "KICK #general user1" isn't sent ❌

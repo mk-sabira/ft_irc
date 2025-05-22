@@ -215,15 +215,15 @@ void Server::processCommand(int clientFd, const std::string& command)
         handlePing(clientFd, tokens);
     else if (tokens[0] == "PRIVMSG" || tokens[0] == "privmsg")
         handlePrivmsg(clientFd, tokens);
-    else if (tokens[0] == "JOIN")  // compilation Error Taha
+    else if (tokens[0] == "JOIN" || tokens[0] == "/join")  // compilation Error Taha
 	    parseJoinCommand(clientFd, command);
-	else if (tokens[0] == "TOPIC") // compilation Error Taha
+	else if (tokens[0] == "TOPIC" || tokens[0] == "/topic") // compilation Error Taha
 	    parseTopicCommand(clientFd, command);
-	else if (tokens[0] == "INVITE") // compilation Error Taha
+	else if (tokens[0] == "INVITE" || tokens[0] == "/invite") // compilation Error Taha
 	    inviteCommand(clientFd, tokens);
-	else if (tokens[0] == "KICK")
+	else if (tokens[0] == "KICK" || tokens[0] == "/kick")
 	    kickCommand(clientFd, tokens);
-	else if (tokens[0] == "MODE") // compilation Error Taha
+	else if (tokens[0] == "MODE" || tokens[0] == "/mode") // compilation Error Taha
 	    modeCommand(clientFd, tokens);
     else
     {

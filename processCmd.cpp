@@ -67,7 +67,7 @@ void Server::handlePass(int clientFd, const std::vector<std::string>& tokens)
     }
     if (tokens[1] != _password)
     {
-        sendReply(clientFd, " 464 :Password incorrect");
+        sendReply(clientFd, " 464 * :Password incorrect");
         removeClient(clientFd);
         return ;
     }
@@ -444,7 +444,12 @@ void Server::parseTopicCommand( int userFd, const std::string& command)
         ++start;
         end = command.find(' ', start);
     }
-
+     if (command == "/topic")
+     {
+         // Missing channel parameter
+         sendToClient(userFd, ERR_NEEDMOREPARAMS, "TOPIC: Not enough parameters");
+         return;
+     }
     if (end == std::string::npos)
         return;
 
