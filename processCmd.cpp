@@ -64,6 +64,7 @@ void Server::splitCommand(std::vector<std::string>& tokens, const std::string& c
         start = end + 1;
     }
 }
+
 void Server::handlePass(int clientFd, const std::vector<std::string>& tokens)
 {
     if (tokens.size() < 2 || tokens[1].empty())
@@ -235,28 +236,6 @@ void Server::handleUser(int clientFd, const std::vector<std::string>& tokens)
 void Server::sendReply(int clientFd, const std::string& message)
 {
     std::string msg = ":" + _serverName + " " + message + "\r\n";
-    int bytesSent = send(clientFd, msg.c_str(), msg.length(), 0);
-    if (bytesSent < 0)
-    {
-        if (errno == EAGAIN || errno == EWOULDBLOCK)
-            std::cout << "Send to FD " << clientFd << " blocked, will retry" << std::endl;
-        else
-            std::cerr << "Error sending to FD " << clientFd << ": " << strerror(errno) << std::endl;
-    }
-    else if (bytesSent != static_cast<int>(msg.length()))
-    {
-        std::cout << "Partial send to FD " << clientFd << ": " << bytesSent << "/" << msg.length() << " bytes" << std::endl;
-    }
-}
-
-void Server::boolSendReply(int clientFd, const std::string& message, bool useServerPrefix)
-{
-    std::string msg;
-    if (useServerPrefix)
-        msg = ":" + _serverName + " " + message + "\r\n";
-    else
-        msg = message + "\r\n";
-
     int bytesSent = send(clientFd, msg.c_str(), msg.length(), 0);
     if (bytesSent < 0)
     {

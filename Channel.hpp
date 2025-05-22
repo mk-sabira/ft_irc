@@ -27,6 +27,7 @@
 #include <map>
 #include <set>
 #include <vector>
+#include <cerrno>
 
 #include "Client.hpp"
 

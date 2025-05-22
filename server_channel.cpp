@@ -1,6 +1,9 @@
 #include "Server.hpp"
 #include "Client.hpp"
 #include "Channel.hpp"
+#include <cerrno>  // For errno, EAGAIN, EWOULDBLOCK
+#include <iostream> // For std::cout, std::cerr
+#include <cstring>  // For strerror
 
 // ------------ helper functions ----------
 
@@ -35,6 +38,40 @@ std::string Server::getClientPrefix(int fd) const // Taha fixed
     return "";
 }
 
+void Server::sendError(int userFd, int errorCode, const std::string& message)
+{
+    std::string nickname = _clients[userFd]->getNickname();
+    std::stringstream ss;
+    ss  << errorCode << " "
+       << (nickname.empty() ? "*" : nickname) << " "
+       << message;
+    sendReply(userFd, ss.str());
+}
+
+
+void Server::sendToClient(int fd, int code, const std::string& message)
+{
+    std::stringstream ss;
+    ss << code << " " << _clients[fd]->getNickname() << " " << message << "\r\n";
+    sendReply(fd, ss.str());
+}
+
+void Server::boolSendToClient(int fd, int code, const std::string& message)
+{
+    std::stringstream ss;
+    ss << code << " " << _clients[fd]->getNickname() << " " << message;
+    boolSendReply(fd, ss.str(), true);
+}
+
+Client* Server::getClientByNickname(const std::string& nickname)
+{
+    for (std::map<int, Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it)
+    {
+        if (it->second->getNickname() == nickname)
+            return it->second;
+    }
+    return NULL;
+}
 
 //---------------------------------- COMMANDS ---------------------------------
 void Server::parseJoinCommand(int userFd, const std::string& command)
@@ -503,4 +540,26 @@ void Server::modeCommand(int userFd, const std::vector<std::string>& tokens)
 	}
 
 
+}
+
+void Server::boolSendReply(int clientFd, const std::string& message, bool useServerPrefix)
+{
+    std::string msg;
+    if (useServerPrefix)
+        msg = ":" + _serverName + " " + message + "\r\n";
+    else
+        msg = message + "\r\n";
+
+    int bytesSent = send(clientFd, msg.c_str(), msg.length(), 0);
+    if (bytesSent < 0)
+    {
+        if (errno == EAGAIN || errno == EWOULDBLOCK)
+            std::cout << "Send to FD " << clientFd << " blocked, will retry" << std::endl;
+        else
+            std::cerr << "Error sending to FD " << clientFd << ": " << strerror(errno) << std::endl;
+    }
+    else if (bytesSent != static_cast<int>(msg.length()))
+    {
+        std::cout << "Partial send to FD " << clientFd << ": " << bytesSent << "/" << msg.length() << " bytes" << std::endl;
+    }
 }

@@ -316,38 +316,3 @@ const char* Server::PortOutOfBound::what() const throw()
 }
 
 
-///------ Taha for the channel-------
-void Server::sendError(int userFd, int errorCode, const std::string& message)
-{
-    std::string nickname = _clients[userFd]->getNickname();
-    std::stringstream ss;
-    ss  << errorCode << " "
-       << (nickname.empty() ? "*" : nickname) << " "
-       << message;
-    sendReply(userFd, ss.str());
-}
-
-
-void Server::sendToClient(int fd, int code, const std::string& message)
-{
-    std::stringstream ss;
-    ss << code << " " << _clients[fd]->getNickname() << " " << message << "\r\n";
-    sendReply(fd, ss.str());
-}
-
-void Server::boolSendToClient(int fd, int code, const std::string& message)
-{
-    std::stringstream ss;
-    ss << code << " " << _clients[fd]->getNickname() << " " << message;
-    boolSendReply(fd, ss.str(), true);
-}
-
-Client* Server::getClientByNickname(const std::string& nickname)
-{
-    for (std::map<int, Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it)
-    {
-        if (it->second->getNickname() == nickname)
-            return it->second;
-    }
-    return NULL;
-}
