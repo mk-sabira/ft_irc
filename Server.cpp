@@ -286,8 +286,8 @@ void Server::processCommand(int clientFd, const std::string& command)
 }
 
 
+// ----------------- SETTERS ----------------- 
 
-//setters
 void Server::setPort(int& port)
 {
     _port = port;
@@ -299,7 +299,8 @@ void Server::setPassword(std::string& password)
 }
 
 
-//getters
+// ----------------- GETTERS ----------------- 
+
 int Server::getPort() const
 {
     return (_port);
@@ -310,9 +311,106 @@ std::string Server::getPassword() const
     return (_password);
 }
 
+Client* Server::getClientByNickname(const std::string& nickname)
+{
+    for (std::map<int, Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it)
+    {
+        if (it->second->getNickname() == nickname)
+            return it->second;
+    }
+    return NULL;
+}
+
 const char* Server::PortOutOfBound::what() const throw()
 {
     return ("Port must be between 1024 and 65535");
 }
 
+std::string Server::getClientPrefix(int fd) const // Taha fixed
+{
+    std::map<int, Client*>::const_iterator it = _clients.find(fd);
+    if (it != _clients.end())
+        return it->second->getPrefix();
+    return "";
+}
 
+void Server::broadcastToAll(const Channel& channel, const std::string& msg, int excludeFd) // Taha compilation Error
+{
+    const std::set<int>& users = channel.getUserFds();
+
+    for (std::set<int>::const_iterator it = users.begin(); it != users.end(); ++it) {
+        if (*it != excludeFd)
+            sendReply(*it, msg);
+    }
+}
+
+// -------------- UTILS ----------------
+
+void Server::sendError(int userFd, int errorCode, const std::string& message)
+{
+    std::string nickname = _clients[userFd]->getNickname();
+    std::stringstream ss;
+    ss  << errorCode << " "
+       << (nickname.empty() ? "*" : nickname) << " "
+       << message;
+    sendReply(userFd, ss.str());
+}
+
+void Server::sendToClient(int fd, int code, const std::string& message)
+{
+    std::stringstream ss;
+    ss << code << " " << _clients[fd]->getNickname() << " " << message << "\r\n";
+    sendReply(fd, ss.str());
+}
+
+void Server::boolSendToClient(int fd, int code, const std::string& message)
+{
+    std::stringstream ss;
+    ss << code << " " << _clients[fd]->getNickname() << " " << message;
+    boolSendReply(fd, ss.str(), true);
+}
+
+
+// --------- CLEANING UTILS ----------------
+
+void Server::removeClient(int clientFd)
+{
+    close(clientFd);
+    // Remove client from all channels first - Dina
+    for (std::map<std::string, Channel*>::iterator it = _channels.begin(); it != _channels.end(); )
+    {
+        Channel* channel = it->second;
+        if (channel->isUser(clientFd))
+        {
+            channel->removeUser(clientFd);
+            channel->removeOperator(clientFd); // Safe even if not operator
+
+            // Optional: delete empty channel
+            if (channel->getUserFds().empty())
+            {
+                delete channel;
+                _channels.erase(it++);
+                continue;
+            }
+        }
+        ++it;
+    }
+    for (std::vector<struct pollfd>::iterator it = _fds.begin(); it != _fds.end(); ++it)
+    {
+        if (it->fd == clientFd)
+        {
+            _fds.erase(it);
+            break;
+        }
+    }
+
+    // Delete the Client object and erase from map
+    std::map<int, Client*>::iterator clientIt = _clients.find(clientFd);
+    if (clientIt != _clients.end())
+    {
+        delete clientIt->second; // Free the memory - Dina
+        _clients.erase(clientIt); // Remove from map - Dina
+    }
+
+    std::cout << "Client FD " << clientFd << RED << " disconnected!" << RESET << std::endl;
+}

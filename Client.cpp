@@ -37,7 +37,7 @@ Client &Client::operator=(const Client &obj)
     return (*this);
 }
 
-// getters
+// ------------ GETTERS -----------------
 std::string &Client::getBuffer()
 {
     return _buffer;
@@ -68,6 +68,8 @@ std::string &Client::getRealname()
     return (_realname);
 }
 
+// -----------------------------------
+
 bool Client::isRegistered() const
 {
     return (_registered);
@@ -83,7 +85,7 @@ std::string Client::getPrefix() const
     return _nickname + "!" + _username + "@" + _hostname;
 }
 
-// setters
+// ---------- SETTERS -----------------------
 void Client::setBuffer(const std::string &buffer)
 {
     _buffer = buffer;

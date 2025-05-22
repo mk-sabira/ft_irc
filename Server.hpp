@@ -151,6 +151,7 @@ class Server
 	    std::string getClientPrefix(int fd) const;
 };
 
-bool stringToInt(const std::string& str, int& result);
+bool		stringToInt(const std::string& str, int& result);
+std::string vecToStr(std::vector<std::string> vec);
 
 #endif
