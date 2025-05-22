@@ -378,7 +378,7 @@ void Server::joinCommand(int userFd, std::string channelName, std::string key)
 
     if (channelName.empty() || channelName[0] != '#')
     {
-        boolSendToClient(userFd, ERR_NOSUCHCHANNEL, channelName);
+        boolSendToClient(userFd, ERR_NOSUCHCHANNEL, channelName + " :No such channel");
         return;
     }
 

@@ -1,0 +1,18 @@
+JOIN:
+- JOIN name key
+- JOIN name1,nam20 key
+- JOIN name1,nam20 key1,key2
+- JOIN 0
+- JOIN 
+- Join a new channel (channel creation)
+- Join an existing channel
+- Join multiple channels 
+- Join a channel with a key
+- join multiple channels with keys
+- Join with wrong key
+- JOIN 0 (leave all channels)
+- Invalid channel name
+- Join invite-only channel without invitation
+- Join full channel
+- Already in channel
+- Join with too many keys

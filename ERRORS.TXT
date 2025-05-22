@@ -1,0 +1,13 @@
+- PASS
+    -   PASS  // without any param
+        :irc.server  461 PASS :Not enough parameters // correct output
+        PASS J // with incorrect password
+        :irc.server  464 :Password incorrect // correct output
+        PASS HL // with incorrect password
+        // disconnects the client from the -- ERROR ----------------------------------- PROBALBLY HAPPENS 
+        [ proccesCmd.cpp - line 71 -  removeClient(clientFd) ] removing the client after having incorrect password rather than giving another chance???
+    - PASS password extraParam
+        does nothing when giving extra arg [works corrrectly wihtout giving an error]
+- USER 
+    - USER 2guest 0 * :3guest
+        doesnt give an error

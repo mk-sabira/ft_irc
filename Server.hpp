@@ -99,22 +99,6 @@ class Server
 	    int getPort() const;
 	    std::string getPassword() const;
 		CommandType getCommandtype (const std::string& command);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-		
 	    
 		//------------------------ // Dina Channel
 	    Client* getClientByNickname(const std::string&);
