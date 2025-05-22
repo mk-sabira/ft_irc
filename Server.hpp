@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mrhelmy <mrhelmy@student.42.fr>            +#+  +:+       +#+        */
+/*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/02 10:10:44 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/17 23:00:41 by mrhelmy          ###   ########.fr       */
+/*   Updated: 2025/05/22 09:39:29 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,7 +25,8 @@
 #include <sstream>  // Needed for std::istringstream
 
 
-
+#include <csignal>
+#include <cstring>
 
 #include <unistd.h> 
 #include <netinet/in.h>   // For sockaddr_in structure, which is used for specifying socket addresses
@@ -34,6 +35,23 @@
 #include "colors.hpp"
 #include "Client.hpp"
 #include "Channel.hpp" // Dina Channel
+
+enum CommandType
+{
+	CMD_PASS,
+	CMD_NICK,
+	CMD_USER,
+	CMD_PING,
+	CMD_PONG,
+	CMD_PRIVMSG,
+	CMD_JOIN,
+	CMD_TOPIC,
+	CMD_INVITE,
+	CMD_KICK,
+	CMD_MODE,
+	CMD_QUIT,
+	CMD_UNKNOWN,
+};
 
 class Server
 {
@@ -64,6 +82,7 @@ class Server
 	    void handlePrivmsg(int clientFd, const std::vector<std::string>& tokens);
 		
 	    void handlePing(int clientFd, const std::vector<std::string>& tokens);
+	    void handlePong(int clientFd, const std::vector<std::string>& tokens);
 		public:
 	    Server(const std::string& port, const std::string& password);
 	    ~Server();
@@ -79,6 +98,23 @@ class Server
 	    //getters
 	    int getPort() const;
 	    std::string getPassword() const;
+		CommandType getCommandtype (const std::string& command);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		
 	    
 		//------------------------ // Dina Channel
 	    Client* getClientByNickname(const std::string&);

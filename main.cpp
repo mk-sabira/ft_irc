@@ -6,12 +6,22 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/09 07:53:52 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/13 07:47:58 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/22 09:45:14 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Server.hpp"
 #include "colors.hpp"
+
+// static volatile sig_atomic_t keepRunning = 1;
+
+// void SignalHandler(int signum)
+// {
+//     (void) signum;
+//     keepRunning = 0;
+//     std::cout << RED << "Received SIGINT, shutting down server..." << std::endl;
+// }
+
 int main(int argc, char **argv)
 {
     if (argc != 3)

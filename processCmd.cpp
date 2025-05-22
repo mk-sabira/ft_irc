@@ -3,60 +3,16 @@
 /*                                                        :::      ::::::::   */
 /*   processCmd.cpp                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mrhelmy <mrhelmy@student.42.fr>            +#+  +:+       +#+        */
+/*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/09 10:59:00 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/17 23:20:12 by mrhelmy          ###   ########.fr       */
+/*   Updated: 2025/05/22 09:30:20 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Server.hpp"
 #include <cerrno>
 #include <cstring>
-
-// void Server::splitCommand(std::vector<std::string>& tokens, const std::string& command, std::string::size_type start, std::string::size_type end )
-// {
-//     tokens.push_back(command.substr(start, end - start)); // Command name
-//     start = end + 1;
-//     if (tokens[0] == "USER")
-//     {
-//         // Split first three parameters
-//         for (int i = 0; i < 3 && end != std::string::npos; ++i)
-//         {
-//             end = command.find(' ', start);
-//             if (end == std::string::npos)
-//                 break;
-//             tokens.push_back(command.substr(start, end - start));
-//             start = end + 1;
-//         }
-//         // Take rest as realname
-//         if (start < command.length())
-//             tokens.push_back(command.substr(start));
-//     }
-//     else if (tokens[0] == "PRIVMSG")
-//     {
-//         end = command.find(' ', start);
-//         if (end != std::string::npos)
-//         {
-//             tokens.push_back(command.substr(start, end - start)); // Target
-//             start = end + 1;
-//             if (start < command.length())
-//                 tokens.push_back(command.substr(start)); // Message (includes ':')
-//         }
-//     }
-//     else
-//     {
-//         // Split remaining parameters
-//         while (end != std::string::npos)
-//         {
-//             end = command.find(' ', start);
-//             tokens.push_back(command.substr(start, end == std::string::npos ? end : end - start));
-//             start = end + 1;
-//         }
-//     }
-// }
-
-
 
 bool stringToInt(const std::string& str, int& result)
 {
@@ -68,6 +24,22 @@ bool stringToInt(const std::string& str, int& result)
         return false;             // Conversion failed or leftover characters exist
 
     return true;                  // Successful conversion
+}
+
+CommandType Server::getCommandtype (const std::string& command)
+{
+    if (command == "PASS" || command == "pass") return CMD_PASS;
+    if (command == "NICK" || command == "nick") return CMD_NICK;
+    if (command == "USER" || command == "user") return CMD_USER;
+    if (command == "PING" || command == "ping") return CMD_PING;
+    if (command == "PONG" || command == "pong") return CMD_PONG;
+    if (command == "PRIVMSG" || command == "privmsg") return CMD_PRIVMSG;
+    if (command == "JOIN" || command == "join") return CMD_JOIN;
+    if (command == "TOPIC" || command == "topic") return CMD_TOPIC;
+    if (command == "INVITE" || command == "invite") return CMD_INVITE;
+    if (command == "KICK" || command == "kick") return CMD_KICK;
+    if (command == "QUIT" || command == "quit") return CMD_QUIT;
+    return CMD_UNKNOWN;
 }
 
 void Server::splitCommand(std::vector<std::string>& tokens, const std::string& command, std::string::size_type start, std::string::size_type end)
@@ -331,5 +303,15 @@ void Server::handlePing(int clientFd, const std::vector<std::string>& tokens)
         return;
     }
     sendReply(clientFd, "PONG " + tokens[1]);
-    std::cout << "Sent PONG to FD " << clientFd << " for PING " << tokens[1] << std::endl;
+    // std::cout << "Sent PONG to FD " << clientFd << " for PING " << tokens[1] << std::endl;
+}
+
+void Server::handlePong(int clientFd, const std::vector<std::string>& tokens)
+{
+    if (tokens.size() < 2)
+    {
+        sendReply(clientFd, "461 PONG :Not enough parameters");
+        return;
+    }
+    // std::cout << "Received PONG from FD " << clientFd << ": " << tokens[1] << std::endl;
 }
