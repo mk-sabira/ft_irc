@@ -6,7 +6,7 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/09 10:59:00 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/22 09:30:20 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/23 09:55:39 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -218,7 +218,9 @@ void Server::handleUser(int clientFd, const std::vector<std::string>& tokens)
         sendReply(clientFd, "002 " + _clients[clientFd]->getNickname() + " :Your host is " + _serverName);
         sendReply(clientFd, "003 " + _clients[clientFd]->getNickname() + " :This server was created today");
         sendReply(clientFd, "004 " + _clients[clientFd]->getNickname() + " :" + _serverName + " 1.0");
+        std::cout << CYAN << "New client connected: FD = " << clientFd << RESET << std::endl;
     }
+
 }
 
 void Server::sendReply(int clientFd, const std::string& message)
@@ -270,7 +272,6 @@ void Server::handlePing(int clientFd, const std::vector<std::string>& tokens)
         return;
     }
     sendReply(clientFd, "PONG " + tokens[1]);
-    // std::cout << "Sent PONG to FD " << clientFd << " for PING " << tokens[1] << std::endl;
 }
 
 void Server::handlePong(int clientFd, const std::vector<std::string>& tokens)
@@ -280,7 +281,6 @@ void Server::handlePong(int clientFd, const std::vector<std::string>& tokens)
         sendReply(clientFd, "461 PONG :Not enough parameters");
         return;
     }
-    // std::cout << "Received PONG from FD " << clientFd << ": " << tokens[1] << std::endl;
 }
 
 //-------------------- CHANNEL COMMANDS --------------------------------

@@ -6,13 +6,16 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/02 10:25:46 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/22 09:44:58 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/23 09:56:41 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Server.hpp"
 #include <cerrno>
 #include <arpa/inet.h>
+
+// Static flag for signal handling
+volatile sig_atomic_t Server::keepRunning = 1;
 
 Server::~Server()
 {
@@ -61,6 +64,7 @@ bool Server::serverSetup()
     if (fcntl(_serverFd, F_SETFL, O_NONBLOCK) == -1)
     {
         std::cout << "Failed to set non-blocking mode" << std::endl;
+        close(_serverFd);
         return (false);
     }
     _serverAdd.sin_family = AF_INET;
@@ -91,25 +95,52 @@ bool Server::serverSetup()
 bool Server::runServer()
 {
     std::cout << GREEN << "IRC Server is running" << RESET << std::endl;
-    while (true)
+
+    // Add stdin to poll loop for Ctrl+D
+    struct pollfd stdinFd;
+    stdinFd.fd = 0; // STDIN_FILENO
+    stdinFd.events = POLLIN;
+    stdinFd.revents = 0;
+    _fds.push_back(stdinFd);
+    
+    while (Server::keepRunning)
     {
         int pollCount = poll(&_fds[0], _fds.size(), -1);
         if (pollCount == -1)
         {
-            std::cerr << "poll() failed" << std::endl;
+            if (errno == EINTR)
+                break;
+            std::cerr << "poll() failed" << strerror(errno) << std::endl;
+            shutdown();
             return (false);
+            
         }
-
-        for (size_t i = 0; i < _fds.size(); i++)
+        for (size_t i = 0; i < _fds.size(); ++i)
         {
-            if (_fds[i].fd == _serverFd && _fds[i].revents & POLLIN)
-                acceptNewClient();
-            else if (_fds[i].fd != _serverFd && _fds[i].revents & POLLIN)
-                recieveClientData(_fds[i].fd);
-            _fds[i].revents = 0; //new line
+            if (_fds[i].revents & POLLIN)
+            {
+                if (_fds[i].fd == 0) // stdin (Ctrl+D)
+                {
+                    char buf[1];
+                    ssize_t bytes = read(0, buf, 1);
+                    if (bytes == 0) // EOF (Ctrl+D)
+                    {
+                        std::cout << "Received Ctrl+D, shutting down server..." << std::endl;
+                        Server::keepRunning = 0;
+                        break;
+                    }
+                }
+                else if (_fds[i].fd == _serverFd)
+                    acceptNewClient();
+                else
+                    receiveClientData(_fds[i].fd);
+            }
+            _fds[i].revents = 0;
         }
+        if(!Server::keepRunning)
+            break;
     }
-    std::cout << "Server stopped running" << std::endl;
+    shutdown();
     return (true);
 }
 
@@ -144,10 +175,9 @@ void Server::acceptNewClient()
     client->setAuthenticated(false);
     client->setHostname(inet_ntoa(clientAddr.sin_addr)); // taha trying to fix lime chat
     _clients[clientFd] = client;
-    std::cout << CYAN << "New client connected: FD = " << clientFd << RESET << std::endl;
 }
 
-void Server::recieveClientData(int clientFd)
+void Server::receiveClientData(int clientFd)
 {
     int bytesRead;
     char buffer[1024];
@@ -213,6 +243,8 @@ void Server::processCommand(int clientFd, const std::string& command)
         handleUser(clientFd, tokens);
     else if (tokens[0] == "PING" || tokens[0] == "ping")
         handlePing(clientFd, tokens);
+    else if (tokens[0] == "PONG" || tokens[0] == "pong")
+        handlePong(clientFd, tokens);
     else if (tokens[0] == "PRIVMSG" || tokens[0] == "privmsg")
         handlePrivmsg(clientFd, tokens);
     else if (tokens[0] == "JOIN" || tokens[0] == "/join")  // compilation Error Taha
@@ -276,7 +308,23 @@ void Server::processCommand(int clientFd, const std::string& command)
     
 }
 
-
+void Server::shutdown()
+{
+    for (std::map<int, Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it)
+    {
+        sendReply(it->first, "ERROR :Server shutting down");
+        close(it->first);
+        delete it->second;
+    }
+    _clients.clear();
+    if (_serverFd != -1)
+    {
+        close(_serverFd);
+        _serverFd = -1;
+    }
+    _fds.clear();
+    std::cout << "Server shutdown complete." << std::endl;
+}
 // ----------------- SETTERS ----------------- 
 
 void Server::setPort(int& port)

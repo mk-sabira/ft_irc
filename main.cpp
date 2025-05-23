@@ -6,21 +6,22 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/09 07:53:52 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/22 09:45:14 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/23 09:43:19 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "Server.hpp"
-#include "colors.hpp"
+#include "main.hpp"
 
-// static volatile sig_atomic_t keepRunning = 1;
 
-// void SignalHandler(int signum)
-// {
-//     (void) signum;
-//     keepRunning = 0;
-//     std::cout << RED << "Received SIGINT, shutting down server..." << std::endl;
-// }
+void signalHandler(int signum)
+{
+    (void)signum;
+    Server::keepRunning = 0;
+    // signal(SIGINT, SIG_IGN);
+    signal(SIGINT, SIG_DFL);
+    const char msg[] = "\nReceived SIGINT, shutting down server...\n";
+    write(STDOUT_FILENO, msg, sizeof(msg) - 1);
+}
 
 int main(int argc, char **argv)
 {
@@ -29,16 +30,32 @@ int main(int argc, char **argv)
         std::cerr << "Usage: ./ircserv <port> <password>" << std::endl;
         return (1);
     }
-
-    Server server(argv[1], argv[2]);
-
-    if (!server.serverSetup())
+    struct sigaction sa;
+    sa.sa_handler = signalHandler;
+    sa.sa_flags = 0;
+    sigemptyset(&sa.sa_mask);
+    sigaddset(&sa.sa_mask, SIGINT);
+    if (sigaction(SIGINT, &sa, 0) == -1)
     {
-        std::cerr << "Server setup failed." << std::endl;
+        std::cerr << "Failed to set SIGINT handler: " << strerror(errno) << std::endl;
+        return 1;
+    }
+    try
+    {
+        Server server(argv[1], argv[2]);
+
+        if (!server.serverSetup())
+        {
+            std::cerr << "Server setup failed." << std::endl;
+            return (1);
+        }
+
+        server.runServer();
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << e.what() << std::endl;
         return (1);
     }
-
-    server.runServer();
-
     return (0);
 }

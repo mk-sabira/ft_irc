@@ -6,7 +6,7 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/02 10:10:44 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/22 09:39:29 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/23 09:03:35 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -55,7 +55,7 @@ enum CommandType
 
 class Server
 {
-	private:
+private:
 	    int _serverFd;
 	    int _port;
 	    std::string _password;
@@ -67,7 +67,7 @@ class Server
 	    std::map<std::string, int> _nickToFd; // <nickname, fd> // Dina Channel // Taha compilation error
 	    
 	    void acceptNewClient();
-	    void recieveClientData(int clientFd);
+	    void receiveClientData(int clientFd);
 	    void processCommand(int clientFd, const std::string& cmd);
 	    void removeClient(int clientFd);
 	    void splitCommand(std::vector<std::string>& tokens, const std::string& command, std::string::size_type start, std::string::size_type end );
@@ -83,13 +83,15 @@ class Server
 		
 	    void handlePing(int clientFd, const std::vector<std::string>& tokens);
 	    void handlePong(int clientFd, const std::vector<std::string>& tokens);
-		public:
+public:
+		static volatile sig_atomic_t keepRunning;
 	    Server(const std::string& port, const std::string& password);
 	    ~Server();
 		
 	    //Methods
 	    bool serverSetup();
 	    bool runServer();
+		void shutdown();
 		
 	    //setters
 	    void setPort(int& port);
