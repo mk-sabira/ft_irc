@@ -10,7 +10,7 @@ Channel::Channel()
       _key(""),
       _userLimit(-1),
       _inviteOnly(false),
-      _topicRestricted(false)
+      _topicRestricted(true)
 {}
 Channel::Channel(const std::string& name)
     : _name(name),
