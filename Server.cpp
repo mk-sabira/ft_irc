@@ -235,76 +235,49 @@ void Server::processCommand(int clientFd, const std::string& command)
         splitCommand(tokens, command, start, end);
     if (tokens.empty())
         return ;
-    if (tokens[0] == "PASS" || tokens[0] == "pass")
-        handlePass(clientFd, tokens);
-    else if( tokens[0] == "NICK" || tokens[0] == "nick")
-        handleNick(clientFd, tokens);
-    else if (tokens[0] == "USER" || tokens[0] == "user")
-        handleUser(clientFd, tokens);
-    else if (tokens[0] == "PING" || tokens[0] == "ping")
-        handlePing(clientFd, tokens);
-    else if (tokens[0] == "PONG" || tokens[0] == "pong")
-        handlePong(clientFd, tokens);
-    else if (tokens[0] == "PRIVMSG" || tokens[0] == "privmsg")
-        handlePrivmsg(clientFd, tokens);
-    else if (tokens[0] == "JOIN" || tokens[0] == "/join")  // compilation Error Taha
-	    parseJoinCommand(clientFd, command);
-	else if (tokens[0] == "TOPIC" || tokens[0] == "/topic") // compilation Error Taha
-	    parseTopicCommand(clientFd, command);
-	else if (tokens[0] == "INVITE" || tokens[0] == "/invite") // compilation Error Taha
-	    inviteCommand(clientFd, tokens);
-	else if (tokens[0] == "KICK" || tokens[0] == "/kick")
-	    kickCommand(clientFd, tokens);
-	else if (tokens[0] == "MODE" || tokens[0] == "/mode") // compilation Error Taha
-	    modeCommand(clientFd, tokens);
-    else
+    CommandType cmd = getCommandtype(tokens[0]);
+    switch (cmd)
     {
-        std::cout << "Unknown cout: " << YELLOW << tokens[0] << RESET << std::endl;
-        sendReply(clientFd, "421 " + tokens[0] + " :Unknown command");
-    }
-    // CommandType cmd = getCommandtype(tokens[0]);
-    // switch (cmd)
-    // {
-    //     case CMD_PASS:
-    //         handlePass(clientFd, tokens);
-    //         break;
-    //     case CMD_NICK:
-    //         handleNick(clientFd, tokens);
-    //         break;
-    //     case CMD_USER:
-    //         handleUser(clientFd, tokens);
-    //         break;
-    //     case CMD_PING:
-    //         handlePing(clientFd, tokens);
-    //         break;
-    //     case CMD_PONG:
-    //         handlePong(clientFd, tokens);
-    //         break;
-    //     case CMD_PRIVMSG:
-    //         handlePrivmsg(clientFd, tokens);
-    //         break;
-    //     case CMD_JOIN:
-    //         parseJoinCommand(clientFd, command);
-    //         break;
-    //     case CMD_TOPIC:
-    //         parseTopicCommand(clientFd, command);
-    //         break;
-    //     case CMD_INVITE:
-    //         inviteCommand(clientFd, tokens);
-    //         break;
-    //     case CMD_KICK:
-    //         kickCommand(clientFd, tokens);
-    //         break;
-    //     case CMD_MODE:
-    //         modeCommand(clientFd, tokens);
-    //         break;
-    //     case CMD_UNKNOWN:
-    //     default:
-    //         std::cout << "Unknown cmd: " << YELLOW << tokens[0] << RESET << std::endl;
-    //         sendReply(clientFd, "421 " + tokens[0] + " :Unknown command");
-    //         break;
+        case CMD_PASS:
+            handlePass(clientFd, tokens);
+            break;
+        case CMD_NICK:
+            handleNick(clientFd, tokens);
+            break;
+        case CMD_USER:
+            handleUser(clientFd, tokens);
+            break;
+        case CMD_PING:
+            handlePing(clientFd, tokens);
+            break;
+        case CMD_PONG:
+            handlePong(clientFd, tokens);
+            break;
+        case CMD_PRIVMSG:
+            handlePrivmsg(clientFd, tokens);
+            break;
+        case CMD_JOIN:
+            parseJoinCommand(clientFd, command);
+            break;
+        case CMD_TOPIC:
+            parseTopicCommand(clientFd, command);
+            break;
+        case CMD_INVITE:
+            inviteCommand(clientFd, tokens);
+            break;
+        case CMD_KICK:
+            kickCommand(clientFd, tokens);
+            break;
+        case CMD_MODE:
+            modeCommand(clientFd, tokens);
+            break;
+        case CMD_UNKNOWN:
+        default:
+            std::cout << "Unknown cmd: " << YELLOW << tokens[0] << RESET << std::endl;
+            sendReply(clientFd, "421 " + tokens[0] + " :Unknown command");
+            break;
 
-    // }
+    }
     
 }
 

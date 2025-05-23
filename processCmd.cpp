@@ -26,6 +26,7 @@ CommandType Server::getCommandtype (const std::string& command)
     if (command == "TOPIC" || command == "topic") return CMD_TOPIC;
     if (command == "INVITE" || command == "invite") return CMD_INVITE;
     if (command == "KICK" || command == "kick") return CMD_KICK;
+    if (command == "MODE" || command == "mode") return CMD_MODE;
     if (command == "QUIT" || command == "quit") return CMD_QUIT;
     return CMD_UNKNOWN;
 }
