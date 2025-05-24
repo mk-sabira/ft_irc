@@ -56,39 +56,36 @@ void Server::splitCommand(std::vector<std::string>& tokens, const std::string& c
 
 void Server::handlePass(int clientFd, const std::vector<std::string>& tokens)
 {
+    std::string nick = _clients[clientFd]->getNickname().empty() ? "*" : _clients[clientFd]->getNickname();
     if (tokens.size() < 2 || tokens[1].empty())
     {
-        sendReply(clientFd, " 461 PASS :Not enough parameters");
+        sendReply(clientFd, macroToString(ERR_NEEDMOREPARAMS) +  " " + nick + " PASS :Not enough parameters");
         return ;
     }
     if (_clients[clientFd]->isAuthenticated())
     {
-        sendReply(clientFd, " 462 :Unauthorized command (already registered)");
+        sendReply(clientFd, macroToString(ERR_ALREADYREGISTERED) + " " + nick + " :Unauthorized command (already registered)");
         return ;
     }
     if (tokens[1] != _password)
     {
-        sendReply(clientFd, " 464 * :Password incorrect");
+        sendReply(clientFd, macroToString(ERR_PASSWDMISMATCH) + " " + nick + " :Password incorrect");
         removeClient(clientFd);
         return ;
     }
     _clients[clientFd]->setAuthenticated(true);
-    // std::cout << "Client FD " << clientFd << " authenticated" << std::endl;
 }
 
-bool Server::validateNick(const std::string& nick, std::string& errorMsg)
+bool Server::validateNick(const std::string& nick)
 {
-    // std::cout<< nick << ":size " << nick.size() << std::endl;
     if (nick.empty() || nick.length() > 9)
     {
-        errorMsg = "432 " + nick + " :Erroneous nickname";
         return false;
     }
     if (!isalpha(nick[0]) && nick[0] != '[' && nick[0] != ']' && nick[0] != '\\' && 
         nick[0] != '`' && nick[0] != '_' && nick[0] != '^' && nick[0] != '{' && 
         nick[0] != '|' && nick[0] != '}')
     {
-        errorMsg = "432 " + nick + " :Erroneous nickname";
         return false;
     }
     for (size_t i = 1; i < nick.length(); ++i)
@@ -97,7 +94,7 @@ bool Server::validateNick(const std::string& nick, std::string& errorMsg)
             nick[i] != '\\' && nick[i] != '`' && nick[i] != '_' && nick[i] != '^' && 
             nick[i] != '{' && nick[i] != '|' && nick[i] != '}')
         {
-            errorMsg = "432 " + nick + " :Erroneous nickname";
+            // errorMsg = "432 " + nick + " :Erroneous nickname";
             return false;
         }
     }
@@ -106,27 +103,28 @@ bool Server::validateNick(const std::string& nick, std::string& errorMsg)
 
 void Server::handleNick(int clientFd, const std::vector<std::string>& tokens)
 {
+    std::string nick = _clients[clientFd]->getNickname().empty() ? "*" : _clients[clientFd]->getNickname();
+
     if (tokens.size() < 2 || tokens[1].empty())
     {
-        sendReply(clientFd, "431 :No nickname given");
+        sendReply(clientFd, macroToString(ERR_NONICKNAMEGIVEN) + " " + nick + " :No nickname given");
         return;
     }
-    std::string errorMess;
     if ( tokens.size() != 2)
     {
-        sendReply(clientFd, "432 " " :Erroneous nickname");
+        sendReply(clientFd, macroToString(ERR_ERRONEUSNICKNAME) + " " + nick + " :Erroneous nickname");
         return ;
     }
-    if (!validateNick(tokens[1], errorMess))
+    if (!validateNick(tokens[1]))
     {
-        sendReply(clientFd, errorMess);
+        sendReply(clientFd, macroToString(ERR_ERRONEUSNICKNAME) + " " + nick + " :Erroneous nickname");
         return ;
     }
     for (std::map<int, Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it)
     {
         if (it->first != clientFd && it->second->getNickname() == tokens[1])
         {
-            sendReply(clientFd, "433 " + tokens[1] + " :Nickname is already in use");
+            sendReply(clientFd, macroToString(ERR_NICKNAMEINUSE) + tokens[1] + " :Nickname is already in use");
             return;
         }
     }
@@ -134,18 +132,19 @@ void Server::handleNick(int clientFd, const std::vector<std::string>& tokens)
     if (_clients[clientFd]->isAuthenticated() && !_clients[clientFd]->getNickname().empty() && !_clients[clientFd]->getUsername().empty())
     {
         _clients[clientFd]->setRegistered(true);
-        sendReply(clientFd, "001 " + _clients[clientFd]->getNickname() + " :Welcome to the IRC server");
-        sendReply(clientFd, "002 " + _clients[clientFd]->getNickname() + " :Your host is " + _serverName);
-        sendReply(clientFd, "003 " + _clients[clientFd]->getNickname() + " :This server was created today");
-        sendReply(clientFd, "004 " + _clients[clientFd]->getNickname() + " :" + _serverName + " 1.0");
+        sendReply(clientFd, macroToString(RPL_WELCOME) + nick + " :Welcome to the IRC server");
+        sendReply(clientFd, macroToString(RPL_YOURHOST) + nick + " :Your host is " + _serverName);
+        sendReply(clientFd, macroToString(RPL_CREATED) + nick + " :This server was created today");
+        sendReply(clientFd,  macroToString(RPL_MYINFO) + nick + " :" + _serverName + " 1.0");
     }
 }
 
-bool Server::validateUser(const std::vector<std::string>& tokens, std::string& errorMsg)
+bool Server::validateUser(int clientFd, const std::vector<std::string>& tokens, std::string& errorMsg)
 {
+    std::string nick = _clients[clientFd]->getNickname().empty() ? "*" : _clients[clientFd]->getNickname();
     if (tokens.size() < 5)
     {
-        errorMsg = "461 USER :Not enough parameters";
+        errorMsg = macroToString(ERR_NEEDMOREPARAMS) + " " + nick + " USER :Not enough parameters";
         return false;
     }
     const std::string& user = tokens[1];
@@ -154,58 +153,46 @@ bool Server::validateUser(const std::vector<std::string>& tokens, std::string& e
 
     if (user.empty() || user.find(' ') != std::string::npos)
     {
-        errorMsg = "461 USER :Not enough parameters";
+        errorMsg = macroToString(ERR_NEEDMOREPARAMS) + " " + nick + " USER :Username contains invalid characters";
         return false;
     }
     for (size_t i = 0; i < user.length(); ++i)
     {
         if (!isalnum(user[i]) && user[i] != '_' && user[i] != '-')
         {
-            errorMsg = "461 USER :Not enough parameters";
+            errorMsg = macroToString(ERR_NEEDMOREPARAMS) + " " + nick + " USER :Username contains invalid characters";
             return false;
         }
     }
-
-    // Validate mode: numeric, 0, 4, 8, or 12 //discover more about it
-    int modeVal = 0;
-    try{
-        // modeVal = std::stoi(mode);
-        stringToInt(mode, modeVal);
-    }
-    catch (...)
-    { 
-        errorMsg = "461 USER :Not enough parameters"; 
-        return false; 
-    }
-    if (modeVal != 0 && modeVal != 4 && modeVal != 8 && modeVal != 12)
+    if (atoi(mode.c_str()) != 0)
     {
-        errorMsg = "461 USER :Not enough parameters";
+        errorMsg = macroToString(ERR_NEEDMOREPARAMS) + " " + nick + " USER :Invalid mode";
         return false;
     }
 
     if (realname.empty())
     {
-        errorMsg = "461 USER :Not enough parameters";
+        errorMsg = macroToString(ERR_NEEDMOREPARAMS) + " " + nick + " USER :Realname cannot be empty";
         return false;
     }
     if (realname.find(' ') != std::string::npos && realname[0] != ':')
     {
-        errorMsg = "461 USER :Not enough parameters";
+        errorMsg = macroToString(ERR_NEEDMOREPARAMS) + " " + nick + " USER :Realname with spaces requires ':' prefix";
         return false;
     }
-
     return true;
 }
 
 void Server::handleUser(int clientFd, const std::vector<std::string>& tokens)
 {
+    std::string nick = _clients[clientFd]->getNickname().empty() ? "*" : _clients[clientFd]->getNickname();
+    std::string errorMsg;
     if (_clients[clientFd]->isRegistered())
     {
         sendToClient(clientFd, ERR_ALREADYREGISTRED, ":Unauthorized command (already registered)");
         return;
     }
-    std::string errorMsg;
-    if (!validateUser(tokens, errorMsg))
+    if (!validateUser(clientFd, tokens, errorMsg))
     {
         sendReply(clientFd, errorMsg);
         return;
@@ -215,10 +202,10 @@ void Server::handleUser(int clientFd, const std::vector<std::string>& tokens)
     if (_clients[clientFd]->isAuthenticated() && !_clients[clientFd]->getNickname().empty() && !_clients[clientFd]->getUsername().empty())
     {
         _clients[clientFd]->setRegistered(true);
-        sendReply(clientFd, "001 " + _clients[clientFd]->getNickname() + " :Welcome to the IRC server");
-        sendReply(clientFd, "002 " + _clients[clientFd]->getNickname() + " :Your host is " + _serverName);
-        sendReply(clientFd, "003 " + _clients[clientFd]->getNickname() + " :This server was created today");
-        sendReply(clientFd, "004 " + _clients[clientFd]->getNickname() + " :" + _serverName + " 1.0");
+        sendReply(clientFd, macroToString(RPL_WELCOME) + nick + " :Welcome to the IRC server");
+        sendReply(clientFd, macroToString(RPL_YOURHOST) + nick + " :Your host is " + _serverName);
+        sendReply(clientFd, macroToString(RPL_CREATED) + nick + " :This server was created today");
+        sendReply(clientFd,  macroToString(RPL_MYINFO) + nick + " :" + _serverName + " 1.0");
         std::cout << CYAN << "New client connected: FD = " << clientFd << RESET << std::endl;
     }
 
@@ -240,12 +227,18 @@ void Server::sendReply(int clientFd, const std::string& message)
         std::cout << "Partial send to FD " << clientFd << ": " << bytesSent << "/" << msg.length() << " bytes" << std::endl;
     }
 }
+std::string Server::macroToString(int macro)
+{
+    std::ostringstream numeric;
+    numeric << macro;
+    return (numeric.str());
 
+}
 void Server::handlePrivmsg(int senderFd, const std::vector<std::string>& tokens)
 {
     if (tokens.size() < 3 || tokens[2].empty())
     {
-        sendReply(senderFd, "412 :No text to send");
+        sendReply(senderFd, macroToString(ERR_NOTEXTTOSEND) + " :No text to send");
         return;
     }
 
@@ -262,14 +255,15 @@ void Server::handlePrivmsg(int senderFd, const std::vector<std::string>& tokens)
         }
     }
 
-    sendReply(senderFd, "401 " + targetNick + " :No such nick/channel");
+    sendReply(senderFd, macroToString(ERR_NOSUCHNICK) + targetNick + " :No such nick/channel");
 }
 
 void Server::handlePing(int clientFd, const std::vector<std::string>& tokens)
 {
+    std::string nick = _clients[clientFd]->getNickname().empty() ? "*" : _clients[clientFd]->getNickname();
     if (tokens.size() < 2)
     {
-        sendReply(clientFd, "461 PING :Not enough parameters");
+        sendReply(clientFd, macroToString(ERR_NEEDMOREPARAMS) + " " + nick + " PING :Not enough parameters");
         return;
     }
     sendReply(clientFd, "PONG " + tokens[1]);
@@ -277,9 +271,10 @@ void Server::handlePing(int clientFd, const std::vector<std::string>& tokens)
 
 void Server::handlePong(int clientFd, const std::vector<std::string>& tokens)
 {
+    std::string nick = _clients[clientFd]->getNickname().empty() ? "*" : _clients[clientFd]->getNickname();
     if (tokens.size() < 2)
     {
-        sendReply(clientFd, "461 PONG :Not enough parameters");
+        sendReply(clientFd, macroToString(ERR_NEEDMOREPARAMS) + " " + nick + " :Not enough parameters");
         return;
     }
 }

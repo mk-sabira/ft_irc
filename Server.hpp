@@ -36,6 +36,32 @@
 #include "Client.hpp"
 #include "Channel.hpp" // Dina Channel
 
+
+#define ERR_NEEDMOREPARAMS      461 // PASS, USER, PING, PONG, PRIVMSG
+#define ERR_ALREADYREGISTERED   462 // PASS, USER
+#define ERR_PASSWDMISMATCH      464 // PASS
+#define ERR_NONICKNAMEGIVEN     431 // NICK
+#define ERR_ERRONEUSNICKNAME    432 // NICK
+#define ERR_NICKNAMEINUSE       433 // NICK
+#define ERR_NICKCOLLISION       436 // NICK
+#define ERR_NOORIGIN            409 // PING
+#define ERR_NOOPERHOST          491 // PONG
+#define RPL_YOUREOPER           381 // PONG
+#define ERR_NOSUCHNICK          401 // PRIVMSG
+#define ERR_NOSUCHSERVER        402 // PRIVMSG
+#define ERR_CANNOTSENDTOCHAN    404 // PRIVMSG
+#define ERR_TOOMANYTARGETS      407 // PRIVMSG
+#define ERR_NORECIPIENT         411 // PRIVMSG
+#define ERR_NOTEXTTOSEND        412 // PRIVMSG
+#define ERR_NOTOPLEVEL          413 // PRIVMSG
+#define ERR_WILDTOPLEVEL        414 // PRIVMSG
+#define RPL_AWAY                301 // PRIVMSG
+#define RPL_WELCOME             001 // USER, NICK
+#define RPL_YOURHOST            002 // USER, NICK
+#define RPL_CREATED             003 // USER, NICK
+#define RPL_MYINFO              004 // USER, NICK
+
+
 enum CommandType
 {
 	CMD_PASS,
@@ -75,14 +101,15 @@ private:
 	    void handlePass(int clientFd, const std::vector<std::string>& tokens);
 	    
 	    void handleNick(int clientFd, const std::vector<std::string>& tokens);
-	    bool validateNick(const std::string& nick, std::string& errorMsg);
+	    bool validateNick(const std::string& nick);
 	    
 	    void handleUser(int clientFd, const std::vector<std::string>& tokens);
-	    bool validateUser(const std::vector<std::string>& tokens, std::string& errorMsg);
+	    bool validateUser(int clientFd, const std::vector<std::string>& tokens, std::string& errorMsg);
 	    void handlePrivmsg(int clientFd, const std::vector<std::string>& tokens);
 		
 	    void handlePing(int clientFd, const std::vector<std::string>& tokens);
 	    void handlePong(int clientFd, const std::vector<std::string>& tokens);
+		std::string macroToString(int macro);
 public:
 		static volatile sig_atomic_t keepRunning;
 	    Server(const std::string& port, const std::string& password);

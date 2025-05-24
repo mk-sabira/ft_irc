@@ -1,0 +1,19 @@
+Valid Usernames:
+- user123
+- alice
+- bob_123
+- test-user
+- a
+- _user
+- -test
+
+
+Invalid Usernames:
+
+- `` (empty)
+- user name (contains space)
+- user@host (contains @)
+- user! (contains !)
+- user# (contains #)
+- user. (contains .)
+- user* (contains *)
