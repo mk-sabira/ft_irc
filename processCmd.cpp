@@ -790,6 +790,124 @@ void Server::kickCommand(int senderFd, const std::vector<std::string>& tokens)
 
 void Server::modeCommand(int userFd, const std::vector<std::string>& tokens)
 {
+    if (tokens.size() < 2)
+    {
+        sendToClient(userFd, ERR_NEEDMOREPARAMS, "MODE :Not enough parameters");
+        return;
+    }
+    std::string channelName = tokens[1];
+	std::map<std::string, Channel*>::iterator it = _channels.find(tokens[1]);
+    if (it == _channels.end())
+    {
+        sendToClient(userFd, ERR_NOSUCHCHANNEL, tokens[1] + " :No such channel");
+        return;
+    }
+    
+    Channel& channel = *(it->second);
+    Client* user = _clients[userFd];
+    if (tokens.size() == 2)
+    {
+        // Format:		 :server 324 <nick> <channel> <modes> [params]
+        sendToClient(userFd, RPL_CHANNELMODEIS,  user->getNickname() + " " + channelName + " " + channel.getModeString());
+        return ;
+    }
+	if (!channel.isUser(userFd))
+    {
+        sendToClient(userFd, ERR_USERONCHANNEL, tokens[1] + " :You're not on that channel");
+        return;
+    }
+	if (!channel.isOperator(userFd))
+    {
+        sendToClient(userFd, ERR_CHANOPRIVSNEEDED, tokens[1] + " :You're not channel operator");
+        return;
+    }
+	char	sign = tokens[2][0];
+	if (sign != '+' && sign != '-')
+	{
+        sendToClient(userFd, ERR_UNKNOWNMODE, std::string(1, sign) + " :is unknown mode char");
+		return ;
+	}
+    size_t paramIndex = 3;
+	for (int i = 1; tokens[2][i]; i++)
+	{
+		char mode = tokens[2][i];
+        std::string param = (paramIndex < tokens.size()) ? tokens[paramIndex] : "";
+		switch (mode)
+		{
+			case 'i':
+			{
+				channel.setInviteFlag(sign);
+				break;
+			}
+			case 't':
+				channel.setRestrictions(sign);
+				break;
+			case 'k':
+			{
+				if (sign == '+' && param.empty())
+				{
+                    sendToClient(userFd, ERR_NEEDMOREPARAMS, "MODE +k :Key required");
+					return ;
+				}
+				channel.setKeyMode(sign, tokens[3]);
+                if (sign == '+') paramIndex++;
+				break;
+			}
+			case 'o':
+			{
+				if (param.empty())
+                {
+                    sendToClient(userFd, ERR_NEEDMOREPARAMS, "MODE +o :User required");
+                    return;
+                }
+                Client* target = getClientByNickname(param);
+                if (!target || !channel.isUser(target->getFd()))
+                {
+                    sendToClient(userFd, ERR_USERNOTINCHANNEL, param + " " + channelName + " :They aren't on that channel");
+                    return;
+                }
+				channel.setOperatorMode(sign, target->getFd());
+                paramIndex++;
+				break;
+			}
+			case 'l':
+			{
+				if (sign == '+' && param.empty())
+				{
+					sendToClient(userFd, ERR_NEEDMOREPARAMS, "MODE +l :Limit required");
+					return ;
+				}
+                if (sign == '+')
+                {
+                    int limit = 0;
+                    stringToInt(tokens[3], limit);
+				    channel.setUserLimit(sign, limit);
+                    paramIndex++;
+                }
+                else
+				    channel.setUserLimit(sign, -1);
+				break;
+			}
+		
+			default:
+			{
+				sendToClient(userFd, ERR_UNKNOWNMODE, std::string(1, mode) + " :is unknown mode char");
+                return;
+			}
+		}
+
+	}
+    // Notify all users about the mode change
+    std::string fullModeStr = tokens[2];
+    for (size_t i = 3; i < tokens.size(); ++i)
+        fullModeStr += " " + tokens[i];
+
+    channel.broadcastToAll(":" + getClientPrefix(userFd) + " MODE " + tokens[1] + " " + fullModeStr, this);
+
+}
+
+void Server::modeCommand(int userFd, const std::vector<std::string>& tokens)
+{
 	if (tokens.size() < 3)
 	{
 		// return the current modes.

@@ -44,6 +44,34 @@ std::string Channel::getKey() const
     return this->_key;
 }
 
+std::string Channel::getModeString() const
+{
+    std::string modes = "+";
+    std::string params;
+
+    if (_inviteOnly) // 'i' 
+        modes += "i";
+
+    if (_topicRestricted) // 't' 
+        modes += "t";
+
+    if (hasKey()) // 'k' 
+    {
+        modes += "k";
+        params += " " + _key;
+    }
+
+    if (_userLimit >= 0) // 'l' 
+    {
+        modes += "l";
+        std::ostringstream oss;
+        oss << " " << _userLimit;
+        params = oss.str() + params;
+    }
+
+    return (modes + params);
+}
+
 std::set<int> Channel::getUserFds() const
 {
     std::set<int> usersFds;

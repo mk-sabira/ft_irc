@@ -1,6 +1,7 @@
 #ifndef CHANNEL_HPP
 # define CHANNEL_HPP
 
+# define RPL_CHANNELMODEIS  324  // "<channel> <mode> <mode params>"
 # define RPL_NOTOPIC  331  // No topic is set
 # define RPL_TOPIC  332  // set Topic
 # define RPL_INVITING  341  //invite reply
@@ -60,6 +61,7 @@ class Channel
         std::string getName() const;
         std::string getKey() const;
         std::string getTopic() const;
+        std::string getModeString() const;
         std::vector<std::string>    getNicknamesWithPrefixes() const;
         std::string getClientPrefix(int fd) const;
 
