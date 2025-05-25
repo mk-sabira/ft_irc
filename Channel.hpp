@@ -94,6 +94,7 @@ class Channel
         void 	kickUser(int targetFd);
         void    broadcastToAll(const std::string& message, Server* server);
         void    boolBroadCastToAll(const std::string& message, Server* server, bool useServerPrefix); // taha fixing limechat
+		void 	broadcastToAllRaw(const std::string& message, Server* server); // taha for end command
 };
 
 

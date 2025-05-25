@@ -227,6 +227,23 @@ void Server::sendReply(int clientFd, const std::string& message)
     }
 }
 
+void Server::sendRaw(int clientFd, const std::string& rawMessage)
+{
+    std::string msg = rawMessage + "\r\n";
+    int bytesSent = send(clientFd, msg.c_str(), msg.length(), 0);
+    if (bytesSent < 0)
+    {
+        if (errno == EAGAIN || errno == EWOULDBLOCK)
+            std::cout << "Send to FD " << clientFd << " blocked, will retry" << std::endl;
+        else
+            std::cerr << "Error sending to FD " << clientFd << ": " << strerror(errno) << std::endl;
+    }
+    else if (bytesSent != static_cast<int>(msg.length()))
+    {
+        std::cout << "Partial send to FD " << clientFd << ": " << bytesSent << "/" << msg.length() << " bytes" << std::endl;
+    }
+}
+
 std::string Server::macroToString(int macro)
 {
     std::ostringstream numeric;
@@ -765,8 +782,9 @@ void Server::kickCommand(int senderFd, const std::vector<std::string>& tokens)
         return;
     }
 
-    std::string msg = ":" + _clients[senderFd]->getPrefix() + " KICK " + channelName + " " + targetNick + " :" + reason;
-    channel->broadcastToAll(msg, this);
+    std::string kickMsg = ":" + _clients[senderFd]->getPrefix() + " KICK " + channelName + " " + targetNick + " :" + reason;
+
+    channel->broadcastToAllRaw(kickMsg, this);
     channel->kickUser(targetFd);
 }
 

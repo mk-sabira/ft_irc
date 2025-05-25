@@ -193,6 +193,16 @@ void Channel::boolBroadCastToAll(const std::string& message, Server* server, boo
     }
 }
 
+void Channel::broadcastToAllRaw(const std::string& message, Server* server)
+{
+    for (std::map<int, Client*>::iterator it = _users.begin(); it != _users.end(); ++it)
+    {
+        int clientFd = it->first;
+        server->sendRaw(clientFd, message);
+    }
+}
+
+
 //-------------------- Helper Functions --------------------------
 
 bool Channel::canJoin(const std::string& key)

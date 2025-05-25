@@ -153,6 +153,7 @@ public:
 	    //----- helper functions----------- // Dina Channel
 		void sendReply(int clientFd, const std::string& message);
 		void boolSendReply(int clientFd, const std::string& message, bool useServerPrefix); // taha fixing limechat
+		void sendRaw(int clientFd, const std::string& rawMessage); // taha for end command
 	    void    sendError(int userFd, int errorCode, const std::string& message);
 	    void    sendToClient(int fd, int code, const std::string& message);
 		void    boolSendToClient(int fd, int code, const std::string& message);
