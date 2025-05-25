@@ -47,5 +47,27 @@ KICK:
     - Kick a user from a channel (no comment)
         * send raw message to server "KICK #general user1" isn't sent ❌
         
+MODE:
+    - View channel modes✅
+    - Set invite-only mode (+i)✅
+    - Set topic restriction mode (+t)✅
+    - Set a channel key (+k)✅
+    - Missing parameter for +k✅
+    - Remove a channel key (-k)✅
+    - Set a user limit (+l)✅ -------------------------- should handle limit value, negative + overflow
+    - Remove user limit (-l)✅ 
+    - Missing parameter for +l✅
+    - Give operator to another user (+o)✅
+    - Missing target nickname for +o✅
+    - Remove operator from user (-o)
+    - Not enough parameters (missing mode)✅
+    - Not a channel operator✅
+    - Channel does not exist✅
+    - Invalid mode character✅
 
 - private message
+
+
+** to be handled
+/mode #c1 -ll
+:irc.server :dina!dina@127.0.0.1 MODE #c1 -ll

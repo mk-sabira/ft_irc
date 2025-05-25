@@ -804,11 +804,11 @@ void Server::modeCommand(int userFd, const std::vector<std::string>& tokens)
     }
     
     Channel& channel = *(it->second);
-    Client* user = _clients[userFd];
+    // Client* user = _clients[userFd];
     if (tokens.size() == 2)
     {
         // Format:		 :server 324 <nick> <channel> <modes> [params]
-        sendToClient(userFd, RPL_CHANNELMODEIS,  user->getNickname() + " " + channelName + " " + channel.getModeString());
+        sendToClient(userFd, RPL_CHANNELMODEIS, channelName + " " + channel.getModeString());
         return ;
     }
 	if (!channel.isUser(userFd))
@@ -906,107 +906,6 @@ void Server::modeCommand(int userFd, const std::vector<std::string>& tokens)
 
 }
 
-void Server::modeCommand(int userFd, const std::vector<std::string>& tokens)
-{
-	if (tokens.size() < 3)
-	{
-		// return the current modes.
-		return ;
-
-		/*
-			Code		324
-			Name		RPL_CHANNELMODEIS
-			Description	Returned when a client requests to view the current modes of a channel.
-			Format:		 :server 324 <nick> <channel> <modes> [params]
-		*/
-	}
-	std::map<std::string, Channel*>::iterator it = _channels.find(tokens[1]);
-    if (it == _channels.end())
-    {
-        sendToClient(userFd, ERR_NOSUCHCHANNEL, tokens[1] + " :No such channel");
-        return;
-    }
-
-    Channel& channel = *(it->second);
-	if (!channel.isUser(userFd))
-    {
-        sendToClient(userFd, ERR_USERONCHANNEL, tokens[1] + " :You're not on that channel");
-        return;
-    }
-	if (!channel.isOperator(userFd))
-    {
-        sendToClient(userFd, ERR_CHANOPRIVSNEEDED, tokens[1] + " :You're not channel operator");
-        return;
-    }
-	char	sign = tokens[2][0];
-	if (sign != '+' && sign != '-')
-	{
-		//error 
-		return ;
-	}
-	for (int i = 1; tokens[2][i]; i++)
-	{
-		char mode = tokens[2][i];
-		switch (mode)
-		{
-			case 'i':
-			{
-				channel.setInviteFlag(sign);
-				break;
-			}
-			case 't':
-				channel.setRestrictions(sign);
-				break;
-			case 'k':
-			{
-				if (tokens.size() < 4 && sign == '+')
-				{
-					//error
-					return ;
-				}
-				channel.setKeyMode(sign, tokens[3]);
-				break;
-			}
-			case 'o':
-			{
-				if (tokens.size() < 4)
-				{
-					//error
-					return ;
-				}
-				channel.setOperatorMode(sign, getClientByNickname(tokens[3])->getFd());
-				break;
-			}
-			case 'l':
-			{
-				if (tokens.size() < 4 && sign == '+')
-				{
-					//error
-					return ;
-				}
-                if (sign == '+')
-                {
-                    int limit = 0;
-                    stringToInt(tokens[3], limit);
-				    channel.setUserLimit(sign, limit);
-                }
-                else
-				    channel.setUserLimit(sign, -1);
-				break;
-			}
-		
-			default:
-			{
-				//error
-				return ;
-				// break;
-			}
-		}
-
-	}
-
-
-}
 
 void Server::boolSendReply(int clientFd, const std::string& message, bool useServerPrefix)
 {

@@ -16,6 +16,7 @@
 
 #include <iostream>
 #include <cstring>
+#include <cstdlib> // for atoi
 #include <sys/socket.h>
 #include <sstream>
 #include <exception>

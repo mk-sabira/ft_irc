@@ -12,7 +12,6 @@
 
 C++ = c++
 CXXFLAGS = -Wall -Wextra -Werror --std=c++98
-#no falgs because of compile error
 NAME = ircserv
 SRC = main.cpp Server.cpp Client.cpp processCmd.cpp Channel.cpp utils.cpp 
 OBJ = ${SRC:.cpp=.o}
