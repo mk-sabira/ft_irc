@@ -6,7 +6,7 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/02 10:25:46 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/25 09:21:49 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/25 12:23:44 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -268,11 +268,15 @@ void Server::processCommand(int clientFd, const std::string& command)
         case CMD_MODE:
             modeCommand(clientFd, tokens);
             break;
+        case CMD_PART:
+            handlePart(clientFd, tokens);
+            break;
         case CMD_QUIT:
             handleQuit(clientFd, tokens);
             break;
         case CMD_UNKNOWN:
         default:
+            std::cout << "New command: " << command << std::endl;
             sendReply(clientFd, macroToString(ERR_UNKNOWNCOMMAND) + " " + nick + " " + tokens[0] + " :Unknown command");
             break;
 

@@ -6,7 +6,7 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/09 10:59:00 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/25 11:14:43 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/25 12:27:53 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,6 +27,7 @@ CommandType Server::getCommandtype (const std::string& command)
     if (command == "INVITE" || command == "/invite") return CMD_INVITE;
     if (command == "KICK" || command == "/kick") return CMD_KICK;
     if (command == "MODE" || command == "/mode") return CMD_MODE;
+    if (command == "PART" || command == "part") return CMD_PART;
     if (command == "QUIT" || command == "quit") return CMD_QUIT;
     return CMD_UNKNOWN;
 }
@@ -317,6 +318,51 @@ void Server::handlePrivmsg(int senderFd, const std::vector<std::string>& tokens)
 }
 
 //-------------------- PRIVMSG COMMAND END --------------------------------
+
+//-------------------- PART COMMAND start --------------------------------
+
+void Server::handlePart(int clientFd, const std::vector<std::string>& tokens)
+{
+    if (tokens.size() < 2 || tokens[1].empty())
+    {
+        boolSendToClient(clientFd, ERR_NEEDMOREPARAMS, "PART :Not enough parameters");
+        return;
+    }
+    std::string channelName = tokens[1].substr(1);
+    std::cout << "name: "<< channelName << std::endl;
+    std::cout << "Channels in _channels:" << std::endl;
+    for (std::map<std::string, Channel*>::iterator it = _channels.begin(); it != _channels.end(); ++it)
+    std::cout << "  " << it->first << std::endl;
+    std::map<std::string, Channel*>::iterator it = _channels.find(channelName);
+    if (it == _channels.end())
+    {
+        boolSendToClient(clientFd, ERR_NOSUCHCHANNEL, channelName + " :No such channel");
+        return;
+    }
+    
+    Channel* channel = it->second;
+    if (!channel->isUser(clientFd))
+    {
+        boolSendToClient(clientFd, ERR_NOTONCHANNEL, channelName + " :You're not on that channel");
+        return;
+    }
+    std::string partMsg = ":" + _clients[clientFd]->getPrefix() + " PART " + channelName + " :"; //messege to send channel members
+    channel->boolBroadCastToAll(partMsg, this, false);
+
+    channel->removeUser(clientFd);
+    channel->removeOperator(clientFd);
+
+    // Delete channel if empty
+    if (channel->getUserFds().empty())
+    {
+        delete channel;
+        _channels.erase(it);
+    }
+    
+    // Debug logs
+    std::cout << "PART from FD " << clientFd << " for " << channelName << " with reason: " << tokens[2] << std::endl;
+}
+
 
 void Server::handlePing(int clientFd, const std::vector<std::string>& tokens)
 {

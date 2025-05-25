@@ -6,7 +6,7 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/02 10:10:44 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/25 11:02:05 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/25 11:57:22 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -76,6 +76,7 @@ enum CommandType
 	CMD_INVITE,
 	CMD_KICK,
 	CMD_MODE,
+	CMD_PART,
 	CMD_QUIT,
 	CMD_UNKNOWN,
 };
@@ -116,6 +117,7 @@ private:
 	    void handlePing(int clientFd, const std::vector<std::string>& tokens);
 	    void handlePong(int clientFd, const std::vector<std::string>& tokens);
 		
+	    void handlePart(int clientFd, const std::vector<std::string>& tokens);
 	    void handleQuit(int clientFd, const std::vector<std::string>& tokens);
 		std::string macroToString(int macro);
 public:
