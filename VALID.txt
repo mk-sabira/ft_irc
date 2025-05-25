@@ -7,7 +7,6 @@ Valid Usernames:
 - _user
 - -test
 
-
 Invalid Usernames:
 
 - `` (empty)
@@ -17,3 +16,9 @@ Invalid Usernames:
 - user# (contains #)
 - user. (contains .)
 - user* (contains *)
+
+Test cases:
+- wrong password
+- wrong nickname
+- wrong user name
+- wrong privmsg

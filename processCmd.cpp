@@ -6,7 +6,7 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/09 10:59:00 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/23 09:55:39 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/25 11:14:43 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -67,7 +67,7 @@ void Server::handlePass(int clientFd, const std::vector<std::string>& tokens)
         sendReply(clientFd, macroToString(ERR_ALREADYREGISTERED) + " " + nick + " :Unauthorized command (already registered)");
         return ;
     }
-    if (tokens[1] != _password)
+    if (tokens[1] != getPassword())
     {
         sendReply(clientFd, macroToString(ERR_PASSWDMISMATCH) + " " + nick + " :Password incorrect");
         removeClient(clientFd);
@@ -132,10 +132,10 @@ void Server::handleNick(int clientFd, const std::vector<std::string>& tokens)
     if (_clients[clientFd]->isAuthenticated() && !_clients[clientFd]->getNickname().empty() && !_clients[clientFd]->getUsername().empty())
     {
         _clients[clientFd]->setRegistered(true);
-        sendReply(clientFd, macroToString(RPL_WELCOME) + nick + " :Welcome to the IRC server");
-        sendReply(clientFd, macroToString(RPL_YOURHOST) + nick + " :Your host is " + _serverName);
-        sendReply(clientFd, macroToString(RPL_CREATED) + nick + " :This server was created today");
-        sendReply(clientFd,  macroToString(RPL_MYINFO) + nick + " :" + _serverName + " 1.0");
+        sendReply(clientFd, macroToString(RPL_WELCOME) + " " + nick + " :Welcome to the IRC server");
+        sendReply(clientFd, macroToString(RPL_YOURHOST) + " " + nick + " :Your host is " + _serverName);
+        sendReply(clientFd, macroToString(RPL_CREATED) + " " + nick + " :This server was created today");
+        sendReply(clientFd,  macroToString(RPL_MYINFO) + " " + nick + " :" + _serverName + " 1.0");
     }
 }
 
@@ -169,7 +169,6 @@ bool Server::validateUser(int clientFd, const std::vector<std::string>& tokens, 
         errorMsg = macroToString(ERR_NEEDMOREPARAMS) + " " + nick + " USER :Invalid mode";
         return false;
     }
-
     if (realname.empty())
     {
         errorMsg = macroToString(ERR_NEEDMOREPARAMS) + " " + nick + " USER :Realname cannot be empty";
@@ -202,13 +201,12 @@ void Server::handleUser(int clientFd, const std::vector<std::string>& tokens)
     if (_clients[clientFd]->isAuthenticated() && !_clients[clientFd]->getNickname().empty() && !_clients[clientFd]->getUsername().empty())
     {
         _clients[clientFd]->setRegistered(true);
-        sendReply(clientFd, macroToString(RPL_WELCOME) + nick + " :Welcome to the IRC server");
-        sendReply(clientFd, macroToString(RPL_YOURHOST) + nick + " :Your host is " + _serverName);
-        sendReply(clientFd, macroToString(RPL_CREATED) + nick + " :This server was created today");
-        sendReply(clientFd,  macroToString(RPL_MYINFO) + nick + " :" + _serverName + " 1.0");
+        sendReply(clientFd, macroToString(RPL_WELCOME) + " " + nick + " :Welcome to the IRC server");
+        sendReply(clientFd, macroToString(RPL_YOURHOST) + " " + nick + " :Your host is " + _serverName);
+        sendReply(clientFd, macroToString(RPL_CREATED) + " " + nick + " :This server was created today");
+        sendReply(clientFd,  macroToString(RPL_MYINFO) + " " + nick + " :" + _serverName + " 1.0");
         std::cout << CYAN << "New client connected: FD = " << clientFd << RESET << std::endl;
     }
-
 }
 
 void Server::sendReply(int clientFd, const std::string& message)
@@ -227,6 +225,7 @@ void Server::sendReply(int clientFd, const std::string& message)
         std::cout << "Partial send to FD " << clientFd << ": " << bytesSent << "/" << msg.length() << " bytes" << std::endl;
     }
 }
+
 std::string Server::macroToString(int macro)
 {
     std::ostringstream numeric;
@@ -234,29 +233,90 @@ std::string Server::macroToString(int macro)
     return (numeric.str());
 
 }
-void Server::handlePrivmsg(int senderFd, const std::vector<std::string>& tokens)
+
+//-------------------- PRIVMSG COMMAND'S NEW IMPLEMENTATION --------------------------------
+bool Server::validatePrivmsg(int senderFd, const std::vector<std::string>& tokens, std::string& errorMsg)
 {
+    std::string nick = _clients[senderFd]->getNickname().empty() ? "*" : _clients[senderFd]->getNickname();
+    if (tokens.size() < 2 )
+    {
+        errorMsg = macroToString(ERR_NOTEXTTOSEND) + " " + nick + " PRIVMSG :No recipient given";
+        return false;
+    }
     if (tokens.size() < 3 || tokens[2].empty())
     {
-        sendReply(senderFd, macroToString(ERR_NOTEXTTOSEND) + " :No text to send");
+        errorMsg = macroToString(ERR_NOTEXTTOSEND) + " " + nick + " PRIVMSG :No text to send";
+        return false;
+    }
+    return true;
+}
+
+std::string Server::buildPrivmsg(const std::vector<std::string>& tokens)
+{
+    std::string message;
+    if (tokens[2][0] == ':')
+        message = tokens[2].substr(1);
+    else
+        message = tokens[2];
+    for (size_t i = 3; i < tokens.size(); i++)
+        message += " " + tokens[i];
+    return (message);
+}
+
+void Server::sendToChannelTarget(int senderFd, const std::string& target, const std::string& message)
+{
+    std::string nick = _clients[senderFd]->getNickname().empty() ? "*" : _clients[senderFd]->getNickname();
+    std::map<std::string, Channel*>::iterator it = _channels.find(target);
+    if (it == _channels.end())
+    {
+        sendReply(senderFd, macroToString(ERR_NOSUCHCHANNEL) + " " + nick + " " + target + " :No such channel");
         return;
     }
-
-    std::string targetNick = tokens[1];
-    std::string message = tokens[2];
-
-    for (std::map<int, Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it)
+    
+    Channel* channel = it->second;
+    if (!channel->isUser(senderFd))
     {
-        if (it->second->getNickname() == targetNick)
-        {
-            std::string msgToSend = ":" + _clients[senderFd]->getNickname() + " PRIVMSG " + targetNick + " :" + message + "\r\n";
-            send(it->first, msgToSend.c_str(), msgToSend.size(), 0);
-            return;
-        }
+        sendReply(senderFd, macroToString(ERR_NOTONCHANNEL) + " " + nick + " " + target + " :You're not on that channel");
+        return;
     }
-
-    sendReply(senderFd, macroToString(ERR_NOSUCHNICK) + targetNick + " :No such nick/channel");
+    std::string msg = ":" + _clients[senderFd]->getPrefix() + " PRIVMSG " + target + " :" + message;
+    channel->boolBroadCastToAll(msg, this, false);
 }
+
+void Server::sendToClientTarget(int senderFd, const std::string& target, const std::string& message)
+{
+    std::string nick = _clients[senderFd]->getNickname().empty() ? "*" : _clients[senderFd]->getNickname();
+    Client* targetClient = getClientByNickname(target);
+    if (!targetClient)
+    {
+        std::string reply = macroToString(ERR_NOSUCHNICK) + " " + nick + " " + target + " :No such nick";
+        sendReply(senderFd, reply);
+        return;
+    }
+    std::string msg = ":" + _clients[senderFd]->getPrefix() + " PRIVMSG " + target + " :" + message;
+    boolSendReply(targetClient->getFd(), msg, false);
+}
+        
+void Server::handlePrivmsg(int senderFd, const std::vector<std::string>& tokens)
+{
+    
+    std::string errorMsg;
+    if (!validatePrivmsg(senderFd, tokens, errorMsg))
+    {
+        sendReply(senderFd, errorMsg);
+        return;
+    }
+    std::string targetNick = tokens[1];
+    std::string message = buildPrivmsg(tokens);
+
+    if(targetNick[0] == '#')
+        sendToChannelTarget(senderFd, targetNick, message);
+    else
+        sendToClientTarget(senderFd, targetNick, message);
+        
+}
+
+//-------------------- PRIVMSG COMMAND END --------------------------------
 
 void Server::handlePing(int clientFd, const std::vector<std::string>& tokens)
 {
@@ -278,6 +338,29 @@ void Server::handlePong(int clientFd, const std::vector<std::string>& tokens)
         return;
     }
 }
+
+void Server::handleQuit(int clientFd, const std::vector<std::string>& tokens)
+{
+    std::string nick = _clients[clientFd]->getNickname().empty() ? "*" : _clients[clientFd]->getNickname();
+    std::string message = "Client quit";
+    if (tokens.size() >= 2 && tokens[1][0] == ':')
+        message = tokens[1].substr(1);
+    else if (tokens.size() >= 2)
+        message = tokens[1];
+    // Build QUIT message
+    Client* client = _clients[clientFd];
+    std::string quitMsg = ":" + client->getNickname() + "!" + client->getUsername() + "@" + 
+                          client->getHostname() + " QUIT :" + message;
+    // Notify users in shared channels
+    for (std::map<std::string, Channel*>::iterator it = _channels.begin(); it !=_channels.end(); ++it)
+    {
+        Channel* channel = it->second;
+        if (channel->isUser(clientFd))
+            channel->boolBroadCastToAll(quitMsg, this, false);
+    }
+    removeClient(clientFd);
+}
+
 
 //-------------------- CHANNEL COMMANDS --------------------------------
 

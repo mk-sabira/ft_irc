@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Client.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mrhelmy <mrhelmy@student.42.fr>            +#+  +:+       +#+        */
+/*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/08 13:55:47 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/17 17:39:06 by mrhelmy          ###   ########.fr       */
+/*   Updated: 2025/05/25 09:09:24 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -53,6 +53,7 @@ class Client
         bool isRegistered() const;
         // Dina Channel
 		std::string    getPrefix()const;
+        std::string getHostname() const;
 };
 
 #endif

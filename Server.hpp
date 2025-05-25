@@ -6,7 +6,7 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/02 10:10:44 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/23 09:03:35 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/25 11:02:05 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -60,6 +60,7 @@
 #define RPL_YOURHOST            002 // USER, NICK
 #define RPL_CREATED             003 // USER, NICK
 #define RPL_MYINFO              004 // USER, NICK
+#define ERR_UNKNOWNCOMMAND 		421 // UNKNOWN
 
 
 enum CommandType
@@ -105,10 +106,17 @@ private:
 	    
 	    void handleUser(int clientFd, const std::vector<std::string>& tokens);
 	    bool validateUser(int clientFd, const std::vector<std::string>& tokens, std::string& errorMsg);
+		
 	    void handlePrivmsg(int clientFd, const std::vector<std::string>& tokens);
+		bool validatePrivmsg(int senderFd, const std::vector<std::string>& tokens, std::string& errorMsg);
+		std::string buildPrivmsg(const std::vector<std::string>& tokens);
+	    void sendToChannelTarget(int senderFd, const std::string& target, const std::string& message);
+	    void sendToClientTarget(int senderFd, const std::string& target, const std::string& message);
 		
 	    void handlePing(int clientFd, const std::vector<std::string>& tokens);
 	    void handlePong(int clientFd, const std::vector<std::string>& tokens);
+		
+	    void handleQuit(int clientFd, const std::vector<std::string>& tokens);
 		std::string macroToString(int macro);
 public:
 		static volatile sig_atomic_t keepRunning;
@@ -122,7 +130,6 @@ public:
 		
 	    //setters
 	    void setPort(int& port);
-	    void setPassword(std::string& password);
 		
 	    //getters
 	    int getPort() const;

@@ -6,7 +6,7 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/02 10:25:46 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/23 09:56:41 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/25 09:21:49 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,6 @@
 #include <cerrno>
 #include <arpa/inet.h>
 
-// Static flag for signal handling
 volatile sig_atomic_t Server::keepRunning = 1;
 
 Server::~Server()
@@ -38,10 +37,10 @@ Server::Server(const std::string &port, const std::string &password):_serverFd(-
 {
     std::istringstream ss(port);
     ss >> _port;
-    if (_port < 1024 || _port > 65535)
+    setPort(_port);
+    if (getPort() < 1024 || getPort() > 65535)
         throw PortOutOfBound();
     _password = password;
-
 }
 
 bool Server::serverSetup()
@@ -52,8 +51,6 @@ bool Server::serverSetup()
         std::cerr << "Socket creation failed" << std::endl;
         return (false);
     }
-
-    //new line -> Enable SO_REUSEADDR
     int opt = 1;
     if (setsockopt(_serverFd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
     {
@@ -182,7 +179,6 @@ void Server::receiveClientData(int clientFd)
     int bytesRead;
     char buffer[1024];
 
-    // std::cout << "Checking FD " << clientFd << " for data" << std::endl;
     bytesRead = recv(clientFd, buffer, sizeof(buffer) - 1, 0);
     
     if (bytesRead < 0)
@@ -226,6 +222,7 @@ void Server::receiveClientData(int clientFd)
 
 void Server::processCommand(int clientFd, const std::string& command)
 {
+    std::string nick = _clients[clientFd]->getNickname().empty() ? "*" : _clients[clientFd]->getNickname();
     std::vector<std::string> tokens;
     std::string::size_type start = 0;
     std::string::size_type end = command.find(' ');
@@ -271,14 +268,15 @@ void Server::processCommand(int clientFd, const std::string& command)
         case CMD_MODE:
             modeCommand(clientFd, tokens);
             break;
+        case CMD_QUIT:
+            handleQuit(clientFd, tokens);
+            break;
         case CMD_UNKNOWN:
         default:
-            std::cout << "Unknown cmd: " << YELLOW << tokens[0] << RESET << std::endl;
-            sendReply(clientFd, "421 " + tokens[0] + " :Unknown command");
+            sendReply(clientFd, macroToString(ERR_UNKNOWNCOMMAND) + " " + nick + " " + tokens[0] + " :Unknown command");
             break;
 
     }
-    
 }
 
 void Server::shutdown()
@@ -298,18 +296,13 @@ void Server::shutdown()
     _fds.clear();
     std::cout << "Server shutdown complete." << std::endl;
 }
+
 // ----------------- SETTERS ----------------- 
 
 void Server::setPort(int& port)
 {
     _port = port;
 }
-
-void Server::setPassword(std::string& password)
-{
-    _password = password;
-}
-
 
 // ----------------- GETTERS ----------------- 
 

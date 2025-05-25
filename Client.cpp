@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Client.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mrhelmy <mrhelmy@student.42.fr>            +#+  +:+       +#+        */
+/*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/08 13:59:47 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/18 00:11:10 by mrhelmy          ###   ########.fr       */
+/*   Updated: 2025/05/25 09:10:18 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -85,6 +85,12 @@ std::string Client::getPrefix() const
     return _nickname + "!" + _username + "@" + _hostname;
 }
 
+//sabira added
+std::string Client::getHostname() const
+{
+    return _hostname;
+}
+
 // ---------- SETTERS -----------------------
 void Client::setBuffer(const std::string &buffer)
 {
@@ -126,3 +132,6 @@ void Client::setHostname(const std::string& hostname)
 {
     _hostname = hostname;
 }
+
+
+
