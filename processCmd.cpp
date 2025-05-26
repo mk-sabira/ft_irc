@@ -6,7 +6,7 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/09 10:59:00 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/25 12:27:53 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/26 18:38:32 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -71,14 +71,14 @@ void Server::splitCommand(std::vector<std::string>& tokens, const std::string& c
 void Server::handlePass(int clientFd, const std::vector<std::string>& tokens)
 {
     std::string nick = _clients[clientFd]->getNickname().empty() ? "*" : _clients[clientFd]->getNickname();
-    if (tokens.size() < 2 || tokens[1].empty())
+    if (tokens.size() != 2 || tokens[1].empty())
     {
         sendReply(clientFd, macroToString(ERR_NEEDMOREPARAMS) +  " " + nick + " PASS :Not enough parameters");
         return ;
     }
     if (_clients[clientFd]->isAuthenticated())
     {
-        sendReply(clientFd, macroToString(ERR_ALREADYREGISTERED) + " " + nick + " :Unauthorized command (already registered)");
+        sendReply(clientFd, macroToString(ERR_ALREADYREGISTERED) + " " + nick + " :Already registered");
         return ;
     }
     if (tokens[1] != getPassword())
@@ -124,7 +124,7 @@ void Server::handleNick(int clientFd, const std::vector<std::string>& tokens)
         sendReply(clientFd, macroToString(ERR_NONICKNAMEGIVEN) + " " + nick + " :No nickname given");
         return;
     }
-    if ( tokens.size() != 2)
+    if (tokens.size() != 2)
     {
         sendReply(clientFd, macroToString(ERR_ERRONEUSNICKNAME) + " " + nick + " :Erroneous nickname");
         return ;
@@ -156,13 +156,14 @@ void Server::handleNick(int clientFd, const std::vector<std::string>& tokens)
 bool Server::validateUser(int clientFd, const std::vector<std::string>& tokens, std::string& errorMsg)
 {
     std::string nick = _clients[clientFd]->getNickname().empty() ? "*" : _clients[clientFd]->getNickname();
-    if (tokens.size() < 5)
+    if (tokens.size() != 5)
     {
-        errorMsg = macroToString(ERR_NEEDMOREPARAMS) + " " + nick + " USER :Not enough parameters";
+        errorMsg = macroToString(ERR_NEEDMOREPARAMS) + " " + nick + " USER :Not correct parameters";
         return false;
     }
     const std::string& user = tokens[1];
-    const std::string& mode = tokens[2];
+    const std::string& hostname = tokens[2];
+    const std::string& serverName = tokens[3];
     const std::string& realname = tokens[4];
 
     if (user.empty() || user.find(' ') != std::string::npos)
@@ -178,9 +179,16 @@ bool Server::validateUser(int clientFd, const std::vector<std::string>& tokens, 
             return false;
         }
     }
-    if (atoi(mode.c_str()) != 0)
+    std::cout << "mode: " << hostname << std::endl;
+    std::cout << "serverN: " << serverName << std::endl;
+    if (hostname != "0")
     {
-        errorMsg = macroToString(ERR_NEEDMOREPARAMS) + " " + nick + " USER :Invalid mode";
+        errorMsg = macroToString(ERR_NEEDMOREPARAMS) + " " + nick + " USER :Hostname must be '0'";
+        return false;
+    }
+    if (serverName != "*")
+    {
+        errorMsg = macroToString(ERR_NEEDMOREPARAMS) + " " + nick + " USER :Servername must be '*'";
         return false;
     }
     if (realname.empty())
@@ -221,6 +229,11 @@ void Server::handleUser(int clientFd, const std::vector<std::string>& tokens)
         sendReply(clientFd,  macroToString(RPL_MYINFO) + " " + nick + " :" + _serverName + " 1.0");
         std::cout << CYAN << "New client connected: FD = " << clientFd << RESET << std::endl;
     }
+    std::cout << "nick Name: "<< _clients[clientFd]->getNickname() << std::endl;
+    std::cout << "user: "<< _clients[clientFd]->getNickname() << std::endl;
+    std::cout << "realname: "<< _clients[clientFd]->getNickname() << std::endl;
+    std::cout << "token2: "<< tokens[2] << std::endl;
+    std::cout << "token3: "<< tokens[3] << std::endl;
 }
 
 void Server::sendReply(int clientFd, const std::string& message)

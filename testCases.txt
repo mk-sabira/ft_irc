@@ -78,24 +78,24 @@ added by Sabira
 1. PASS
     Test Case 1: Valid password
     Input: PASS 123
-    Expected Output: No reply, client authenticated.
-    Explanation: handlePass sets isAuthenticated(true) (line 36). Silent per RFC 2812 (Section 3.1.1).
+        Expected Output: No reply, client authenticated.
+        Explanation: handlePass sets isAuthenticated(true) (line 36). Silent per RFC 2812 (Section 3.1.1).
     Test Case 2: Missing password
     Input: PASS
-    Expected Output: :irc.server 461 * PASS :Not enough parameters
-    Explanation: tokens.size() < 2 (line 24) sends ERR_NEEDMOREPARAMS (461).
+        Expected Output: :irc.server 461 * PASS :Not enough parameters
+        Explanation: tokens.size() < 2 (line 24) sends ERR_NEEDMOREPARAMS (461).
     Test Case 3: Wrong password
     Input: PASS wrong
-    Expected Output: :irc.server 464 * :Password incorrect, client disconnected.
-    Explanation: tokens[1] != _password (line 32) sends ERR_PASSWDMISMATCH (464), calls removeClient.
+        Expected Output: :irc.server 464 * :Password incorrect, client disconnected.
+        Explanation: tokens[1] != _password (line 32) sends ERR_PASSWDMISMATCH (464), calls removeClient.
     Test Case 4: Already authenticated
     Input: PASS 123 (after PASS 123)
-    Expected Output: :irc.server 462 alice :Unauthorized command (already registered)
-    Explanation: isAuthenticated() true (line 28) sends ERR_ALREADYREGISTERED (462).
+        Expected Output: :irc.server 462 alice :Unauthorized command (already registered)
+        Explanation: isAuthenticated() true (line 28) sends ERR_ALREADYREGISTERED (462).
     [NEW] Test Case 5: Partial password command
     Input: PA^DSS 1^D23 (via nc -C, ^D = Ctrl+D)
-    Expected Output: No reply until full command, then authenticates.
-    Explanation: receiveClientData aggregates partial data (subject’s nc test), processes PASS 123 when complete.
+        Expected Output: No reply until full command, then authenticates.
+        Explanation: receiveClientData aggregates partial data (subject’s nc test), processes PASS 123 when complete.
 2. NICK
     Test Case 1: Valid nickname
     Input: NICK alice (after PASS 123, USER alice 0 * :Alice Smith)
