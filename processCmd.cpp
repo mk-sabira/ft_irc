@@ -508,26 +508,27 @@ void Server::parseJoinCommand(int userFd, const std::string& command)
 {
     std::vector<std::string> tokens;
     size_t                   start = 0;
-    size_t                   end = command.find(' ');
-
-    while (end != std::string::npos && command[start] == ' ')
-    {
-        ++start;
-        end = command.find(' ', start);
-    }
-
-    if (end == std::string::npos)
-        return;
-
-    tokens.push_back(command.substr(start, end - start));
-    start = end + 1;
 
     while (start < command.length() && command[start] == ' ')
         ++start;
+    size_t end = command.find(' ', start);
+    if (end == std::string::npos)
+    {
+        sendToClient(userFd, ERR_NEEDMOREPARAMS, "JOIN :Not enough parameters");
+        return;
+    }
 
+    start = end + 1;
+    while (start < command.length() && command[start] == ' ')
+        ++start;
+    if (start >= command.length()) {
+        sendToClient(userFd, ERR_NEEDMOREPARAMS, "JOIN :Not enough parameters");
+        return;
+    }
+    //extract channel list
     end = command.find(' ', start);
     std::string channels = command.substr(start, end - start);
-
+    //extract keys
     std::string keys;
     if (end != std::string::npos)
     {
@@ -873,6 +874,11 @@ void Server::modeCommand(int userFd, const std::vector<std::string>& tokens)
         return;
     }
     std::string channelName = tokens[1];
+    if (channelName.empty())
+    {
+        sendToClient(userFd, ERR_NEEDMOREPARAMS, "MODE :Not enough parameters");
+        return;
+    }
 	std::map<std::string, Channel*>::iterator it = _channels.find(tokens[1]);
     if (it == _channels.end())
     {

@@ -368,7 +368,7 @@ void Server::sendError(int userFd, int errorCode, const std::string& message)
 void Server::sendToClient(int fd, int code, const std::string& message)
 {
     std::stringstream ss;
-    ss << code << " " << _clients[fd]->getNickname() << " " << message << "\r\n";
+    ss << code << " " << _clients[fd]->getNickname() << " " << message<<std::endl;
     sendReply(fd, ss.str());
 }
 

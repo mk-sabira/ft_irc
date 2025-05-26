@@ -2,6 +2,7 @@
     limechat :Error(401): No such nick/channel
     ours: :irc.server 421  :Unknown command
 
+join, topic, spaces before the command
 JOIN: 
     - Join a new channel (channel creation) ✅
     - Join an existing channel ✅
@@ -36,7 +37,7 @@ INVITE:
     - Inviting to a non-existent channel ✅
     - Target nickname does not exist ✅
     - Missing parameters (with no,one, ore two spaces after the command) (but it should work correctly in all cases- see next case)✅
-    - "/invite      " more than 2 spaces after the command ❌
+    - "/invite      " more than 2 spaces after the command ✅
         output : No such nick
         correct output : Not enough parameters
     - "/invite existuser  " more than 1 space after the nick ❌
@@ -65,7 +66,6 @@ MODE:
     - Channel does not exist✅
     - Invalid mode character✅
 
-- private message
 
 
 ** to be handled
@@ -167,31 +167,31 @@ added by Sabira
     Expected Output: Bob and Charlie receive :alice!alice@host PRIVMSG #test :hello all
     Explanation: boolBroadCastToAll sends to all channel members, satisfying subject’s forwarding requirement.
 5. JOIN
-    Test Case 1: Join new channel
-    Input: JOIN #test
-    Expected Output:
-    text
+    Test Case 1: Join new channel ✅
+        Input: JOIN #test
+        Expected Output:
+        text
         :alice!alice@host JOIN :#test
         :irc.server 331 alice #test :No topic is set
         :irc.server 353 alice = #test :@alice
         :irc.server 366 alice #test :End of /NAMES list
-    Explanation: Creates channel (line 73), adds user/operator (lines 76–77), sends RPL_NOTOPIC (331), RPL_NAMREPLY (353), RPL_ENDOFNAMES (366) (lines 84–88).
-    Test Case 2: Join existing channel
-    Input: JOIN #test (after alice joins)
-    Expected Output: Same as above, with :@alice @bob in RPL_NAMREPLY.
-    Explanation: Adds user to channel (line 98).
-    Test Case 3: Invalid channel
-    Input: JOIN test
-    Expected Output: :irc.server 403 alice test :No such channel
-    Explanation: channelName[0] != '#' (line 66) sends ERR_NOSUCHCHANNEL (403).
-    Test Case 4: Join with key
-    Input: JOIN #test secret (channel has key secret)
-    Expected Output: Success, same as Test Case 1.
-    Explanation: canJoin(key) passes (line 92).
-    [NEW] Test Case 5: Invite-only channel
-    Input: JOIN #test (channel is +i, no invite)
-    Expected Output: :irc.server 473 alice #test :Cannot join channel (+i)
-    Explanation: isInviteOnly() && !isInvited (line 86) sends ERR_INVITEONLYCHAN (473).
+        Explanation: Creates channel (line 73), adds user/operator (lines 76–77), sends RPL_NOTOPIC (331), RPL_NAMREPLY (353), RPL_ENDOFNAMES (366) (lines 84–88).
+    Test Case 2: Join existing channel ✅
+        Input: JOIN #test (after alice joins)
+        Expected Output: Same as above, with :@alice @bob in RPL_NAMREPLY.
+        Explanation: Adds user to channel (line 98).
+    Test Case 3: Invalid channel ✅
+        Input: JOIN test
+        Expected Output: :irc.server 403 alice test :No such channel
+        Explanation: channelName[0] != '#' (line 66) sends ERR_NOSUCHCHANNEL (403).
+    Test Case 4: Join with key ✅
+        Input: JOIN #test secret (channel has key secret)
+        Expected Output: Success, same as Test Case 1.
+        Explanation: canJoin(key) passes (line 92).
+    [NEW] Test Case 5: Invite-only channel ✅
+        Input: JOIN #test (channel is +i, no invite)
+        Expected Output: :irc.server 473 alice #test :Cannot join channel (+i)
+        Explanation: isInviteOnly() && !isInvited (line 86) sends ERR_INVITEONLYCHAN (473).
 6. PART (Assumed Implementation)
     - Test Case 1: Part channel (existing channel you’re in) ✅
         Input: PART #test
@@ -244,39 +244,39 @@ added by Sabira
         Expected Output: :irc.server 442 alice #general :No such channel //if channel does not exist
 .
 7. TOPIC
-    Test Case 1: Set topic
+    Test Case 1: Set topic ✅
     Input: TOPIC #test :Hello world
     Expected Output: :alice!alice@host TOPIC #test :Hello world (to channel).
     Explanation: Sets topic (line 156), broadcasts (line 160).
-    Test Case 2: Get topic
+    Test Case 2: Get topic ✅
     Input: TOPIC #test
     Expected Output: :irc.server 332 alice #test :Hello world or :irc.server 331 alice #test :No topic is set
     Explanation: Sends RPL_TOPIC (332) or RPL_NOTOPIC (331, lines 148–151).
-    Test Case 3: Invalid channel
+    Test Case 3: Invalid channel ✅
     Input: TOPIC test
     Expected Output: :irc.server 403 alice test :No such channel
     Explanation: channelName[0] != '#' (line 134) sends ERR_NOSUCHCHANNEL (403).
-    Test Case 4: Non-operator in restricted channel
+    Test Case 4: Non-operator in restricted channel ✅
     Input: TOPIC #test :new topic (non-operator, +t)
     Expected Output: :irc.server 482 alice #test :You're not channel operator
     Explanation: isTopicRestricted() && !isOperator (line 152) sends ERR_CHANOPRIVSNEEDED (482).
 8. INVITE
-    Test Case 1: Valid invite
-    Input: INVITE bob #test
+    Test Case 1: Valid invite ✅
+        Input: INVITE bob #test
         Expected Output:
         Sender: :irc.server 341 alice bob #test
         Invitee: :alice!alice@host INVITE bob :#test
         Explanation: Adds invite (line 180), sends RPL_INVITING (341) and invite message (lines 182–185).
-        Test Case 2: Missing parameters
-    Input: INVITE bob
+    Test Case 2: Missing parameters ✅
+        Input: INVITE bob
         Expected Output: :irc.server 461 alice INVITE :Not enough parameters
         Explanation: tokens.size() < 3 (line 164) sends ERR_NEEDMOREPARAMS (461).
-        Test Case 3: Invalid nick
-    Input: INVITE invalid #test
+    Test Case 3: Invalid nick ✅
+        Input: INVITE invalid #test
         Expected Output: :irc.server 401 alice invalid :No such nick
         Explanation: getClientByNickname fails (line 169) sends ERR_NOSUCHNICK (401).
-        Test Case 4: User already on channel
-    Input: INVITE bob #test (bob in channel)
+     Test Case 4: User already on channel ✅
+        Input: INVITE bob #test (bob in channel)
         Expected Output: :irc.server 443 alice bob #test :is already on channel
         Explanation: isUser(targetFd) (line 178) sends ERR_USERONCHANNEL (443).
 9. KICK
