@@ -508,26 +508,27 @@ void Server::parseJoinCommand(int userFd, const std::string& command)
 {
     std::vector<std::string> tokens;
     size_t                   start = 0;
-    size_t                   end = command.find(' ');
-
-    while (end != std::string::npos && command[start] == ' ')
-    {
-        ++start;
-        end = command.find(' ', start);
-    }
-
-    if (end == std::string::npos)
-        return;
-
-    tokens.push_back(command.substr(start, end - start));
-    start = end + 1;
 
     while (start < command.length() && command[start] == ' ')
         ++start;
+    size_t end = command.find(' ', start);
+    if (end == std::string::npos)
+    {
+        sendToClient(userFd, ERR_NEEDMOREPARAMS, "JOIN :Not enough parameters");
+        return;
+    }
 
+    start = end + 1;
+    while (start < command.length() && command[start] == ' ')
+        ++start;
+    if (start >= command.length()) {
+        sendToClient(userFd, ERR_NEEDMOREPARAMS, "JOIN :Not enough parameters");
+        return;
+    }
+    //extract channel list
     end = command.find(' ', start);
     std::string channels = command.substr(start, end - start);
-
+    //extract keys
     std::string keys;
     if (end != std::string::npos)
     {
@@ -653,35 +654,24 @@ void Server::joinCommand(int userFd, std::string channelName, std::string key)
 
 void Server::parseTopicCommand( int userFd, const std::string& command)
 {
-    std::vector<std::string> tokens;
-    std::string::size_type   start = 0;
-    std::string::size_type   end = command.find(' ');
+   std::vector<std::string> tokens;
+    size_t                   start = 0;
 
-    // Skip any leading spaces after the command name
-    while (end != std::string::npos && command[start] == ' ')
-    {
+    while (start < command.length() && command[start] == ' ')
         ++start;
-        end = command.find(' ', start);
-    }
-     if (command == "/topic")
-     {
-         // Missing channel parameter
-         sendToClient(userFd, ERR_NEEDMOREPARAMS, "TOPIC: Not enough parameters");
-         return;
-     }
+    size_t end = command.find(' ', start);
     if (end == std::string::npos)
+    {
+        sendToClient(userFd, ERR_NEEDMOREPARAMS, "TOPIC :Not enough parameters");
         return;
+    }
 
-    tokens.push_back(command.substr(start, end - start)); // Command name (e.g., "TOPIC")
     start = end + 1;
-
-    // Skip additional spaces
     while (start < command.length() && command[start] == ' ')
         ++start;
 
-    if (start >= command.length())
+    if (start >= command.length()) // Missing channel parameter
     {
-        // Missing channel parameter
         sendToClient(userFd, ERR_NEEDMOREPARAMS, "TOPIC: Not enough parameters");
         return;
     }
@@ -691,7 +681,7 @@ void Server::parseTopicCommand( int userFd, const std::string& command)
     std::string channel = command.substr(start, end - start);
     start = (end == std::string::npos) ? std::string::npos : end + 1;
 
-    // Skip additional spaces before topic (if present)
+    // Skip spaces before topic
     while (start != std::string::npos && start < command.length() && command[start] == ' ')
         ++start;
 
@@ -716,7 +706,7 @@ void Server::topicCommand(int userFd, std::string channelName, std::string topic
 {
     if (channelName.empty() || channelName[0] != '#')
     {
-        sendToClient(userFd, ERR_NOSUCHCHANNEL, channelName);
+        sendToClient(userFd, ERR_NOSUCHCHANNEL, channelName + " :No such channel");
         return;
     }
     std::map<std::string, Channel*>::iterator it = this->_channels.find(channelName);
@@ -873,6 +863,11 @@ void Server::modeCommand(int userFd, const std::vector<std::string>& tokens)
         return;
     }
     std::string channelName = tokens[1];
+    if (channelName.empty())
+    {
+        sendToClient(userFd, ERR_NEEDMOREPARAMS, "MODE :Not enough parameters");
+        return;
+    }
 	std::map<std::string, Channel*>::iterator it = _channels.find(tokens[1]);
     if (it == _channels.end())
     {
