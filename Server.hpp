@@ -118,7 +118,7 @@ private:
 	    void handlePing(int clientFd, const std::vector<std::string>& tokens);
 	    void handlePong(int clientFd, const std::vector<std::string>& tokens);
 		
-	    void handlePart(int clientFd, const std::vector<std::string>& tokens);
+	    void handlePart(int clientFd, const std::string& command);
 	    void handleQuit(int clientFd, const std::vector<std::string>& tokens);
 		std::string macroToString(int macro);
 public:
@@ -168,6 +168,7 @@ public:
 	    void    kickCommand(int senderFd, const std::vector<std::string>& tokens);
 	    void    inviteCommand(int senderFd, const std::vector<std::string>& tokens);
 		void	modeCommand(int userFd, const std::vector<std::string>& tokens);
+		void	partUser(int clientFd, const std::string& channelName, const std::string& comment);
 
 	    
 	    //------ CHANNEL Taha --------//

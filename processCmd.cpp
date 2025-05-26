@@ -27,7 +27,7 @@ CommandType Server::getCommandtype (const std::string& command)
     if (command == "INVITE" || command == "/invite") return CMD_INVITE;
     if (command == "KICK" || command == "/kick") return CMD_KICK;
     if (command == "MODE" || command == "/mode") return CMD_MODE;
-    if (command == "PART" || command == "part") return CMD_PART;
+    if (command == "PART" || command == "/part") return CMD_PART;
     if (command == "QUIT" || command == "quit") return CMD_QUIT;
     return CMD_UNKNOWN;
 }
@@ -351,18 +351,74 @@ void Server::handlePrivmsg(int senderFd, const std::vector<std::string>& tokens)
 
 //-------------------- PART COMMAND start --------------------------------
 
-void Server::handlePart(int clientFd, const std::vector<std::string>& tokens)
+void Server::handlePart(int clientFd, const std::string& command)
 {
-    if (tokens.size() < 2 || tokens[1].empty())
+    std::vector<std::string> tokens;
+    size_t                   start = 0;
+    
+    while (start < command.length() && command[start] == ' ')
+    {
+        ++start;
+        // end = command.find(' ', start);
+    }
+    size_t end = command.find(' ', start);
+    if (end == std::string::npos)
     {
         boolSendToClient(clientFd, ERR_NEEDMOREPARAMS, "PART :Not enough parameters");
         return;
     }
-    std::string channelName = tokens[1].substr(1);
-    std::cout << "name: "<< channelName << std::endl;
-    std::cout << "Channels in _channels:" << std::endl;
-    for (std::map<std::string, Channel*>::iterator it = _channels.begin(); it != _channels.end(); ++it)
-    std::cout << "  " << it->first << std::endl;
+    tokens.push_back(command.substr(start, end - start));
+    start = end + 1;
+
+    while (start < command.length() && command[start] == ' ')
+        ++start;
+    //extract channels list
+    end = command.find(' ', start);
+    std::string channels = command.substr(start, end - start);
+
+    std::string comment;
+    if (end != std::string::npos)
+    {
+        start = end + 1;
+        while (start < command.length() && command[start] == ' ')
+            ++start;
+
+        if (start < command.length())
+        {
+            if (command[start] == ':')
+                ++start;
+            comment = command.substr(start);
+        }
+    }
+
+    // Split channelsk
+    std::vector<std::string> channelList;
+    std::string::size_type chanStart = 0;
+    std::string::size_type chanEnd;
+    while ((chanEnd = channels.find(',', chanStart)) != std::string::npos)
+    {
+        channelList.push_back(channels.substr(chanStart, chanEnd - chanStart));
+        chanStart = chanEnd + 1;
+    }
+    if (chanStart < channels.length())
+        channelList.push_back(channels.substr(chanStart));
+    
+    for (size_t i = 0; i < channelList.size(); ++i)
+        partUser(clientFd, channelList[i], comment);
+}
+
+void Server::partUser(int clientFd, const std::string& channelName, const std::string& comment)
+{
+    if (channelName.empty())
+    {
+        boolSendToClient(clientFd, ERR_NEEDMOREPARAMS, "PART :Not enough parameters");
+        return;
+    }
+    // std::string channelName = tokens[1].substr(1);
+    // std::cout << "name: "<< channelName << std::endl;
+    // std::cout << "Channels in _channels:" << std::endl;
+    // for (std::map<std::string, Channel*>::iterator it = _channels.begin(); it != _channels.end(); ++it)
+    // std::cout << "  " << it->first << std::endl;
     std::map<std::string, Channel*>::iterator it = _channels.find(channelName);
     if (it == _channels.end())
     {
@@ -377,6 +433,8 @@ void Server::handlePart(int clientFd, const std::vector<std::string>& tokens)
         return;
     }
     std::string partMsg = ":" + _clients[clientFd]->getPrefix() + " PART " + channelName + " :"; //messege to send channel members
+    if (!comment.empty())
+        partMsg += " :" + comment;
     channel->boolBroadCastToAll(partMsg, this, false);
 
     channel->removeUser(clientFd);
@@ -390,7 +448,7 @@ void Server::handlePart(int clientFd, const std::vector<std::string>& tokens)
     }
     
     // Debug logs
-    std::cout << "PART from FD " << clientFd << " for " << channelName << " with reason: " << tokens[2] << std::endl;
+    // std::cout << "PART from FD " << clientFd << " for " << channelName << " with reason: " << tokens[2] << std::endl;
 }
 
 

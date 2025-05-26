@@ -269,7 +269,7 @@ void Server::processCommand(int clientFd, const std::string& command)
             modeCommand(clientFd, tokens);
             break;
         case CMD_PART:
-            handlePart(clientFd, tokens);
+            handlePart(clientFd, command);
             break;
         case CMD_QUIT:
             handleQuit(clientFd, tokens);
