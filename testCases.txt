@@ -2,6 +2,7 @@
     limechat :Error(401): No such nick/channel
     ours: :irc.server 421  :Unknown command
 
+join, topic, spaces before the command
 JOIN: 
     - Join a new channel (channel creation) ✅
     - Join an existing channel ✅
