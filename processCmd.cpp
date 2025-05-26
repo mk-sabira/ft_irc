@@ -370,10 +370,7 @@ void Server::handlePart(int clientFd, const std::string& command)
     size_t                   start = 0;
     
     while (start < command.length() && command[start] == ' ')
-    {
         ++start;
-        // end = command.find(' ', start);
-    }
     size_t end = command.find(' ', start);
     if (end == std::string::npos)
     {
@@ -385,9 +382,13 @@ void Server::handlePart(int clientFd, const std::string& command)
 
     while (start < command.length() && command[start] == ' ')
         ++start;
-    //extract channels list
     end = command.find(' ', start);
     std::string channels = command.substr(start, end - start);
+    if (channels.empty())
+    {
+        boolSendToClient(clientFd, ERR_NEEDMOREPARAMS, "PART :Not enough parameters");
+        return;
+    }
 
     std::string comment;
     if (end != std::string::npos)
@@ -404,7 +405,7 @@ void Server::handlePart(int clientFd, const std::string& command)
         }
     }
 
-    // Split channelsk
+    // Split channel list
     std::vector<std::string> channelList;
     std::string::size_type chanStart = 0;
     std::string::size_type chanEnd;
@@ -427,11 +428,6 @@ void Server::partUser(int clientFd, const std::string& channelName, const std::s
         boolSendToClient(clientFd, ERR_NEEDMOREPARAMS, "PART :Not enough parameters");
         return;
     }
-    // std::string channelName = tokens[1].substr(1);
-    // std::cout << "name: "<< channelName << std::endl;
-    // std::cout << "Channels in _channels:" << std::endl;
-    // for (std::map<std::string, Channel*>::iterator it = _channels.begin(); it != _channels.end(); ++it)
-    // std::cout << "  " << it->first << std::endl;
     std::map<std::string, Channel*>::iterator it = _channels.find(channelName);
     if (it == _channels.end())
     {
@@ -445,7 +441,7 @@ void Server::partUser(int clientFd, const std::string& channelName, const std::s
         boolSendToClient(clientFd, ERR_NOTONCHANNEL, channelName + " :You're not on that channel");
         return;
     }
-    std::string partMsg = ":" + _clients[clientFd]->getPrefix() + " PART " + channelName + " :"; //messege to send channel members
+    std::string partMsg = ":" + _clients[clientFd]->getPrefix() + " PART " + channelName; //messege to send channel members
     if (!comment.empty())
         partMsg += " :" + comment;
     channel->boolBroadCastToAll(partMsg, this, false);
@@ -459,9 +455,6 @@ void Server::partUser(int clientFd, const std::string& channelName, const std::s
         delete channel;
         _channels.erase(it);
     }
-    
-    // Debug logs
-    // std::cout << "PART from FD " << clientFd << " for " << channelName << " with reason: " << tokens[2] << std::endl;
 }
 
 

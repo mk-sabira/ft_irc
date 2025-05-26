@@ -193,22 +193,56 @@ added by Sabira
     Expected Output: :irc.server 473 alice #test :Cannot join channel (+i)
     Explanation: isInviteOnly() && !isInvited (line 86) sends ERR_INVITEONLYCHAN (473).
 6. PART (Assumed Implementation)
-    Test Case 1: Part channel
-    Input: PART #test
-    Expected Output: :alice!alice@host PART #test, client leaves channel.
-    Explanation: Broadcasts PART, removes user (RFC 2812, Section 3.2.2).
-    Test Case 2: Part with reason
-    Input: PART #test :bye
-    Expected Output: :alice!alice@host PART #test :bye
-    Explanation: Includes reason in broadcast.
-    Test Case 3: Invalid channel
-    Input: PART #invalid
-    Expected Output: :irc.server 403 alice #invalid :No such channel
-    Explanation: Sends ERR_NOSUCHCHANNEL (403).
-    [NEW] Test Case 4: Part all channels
-    Input: JOIN 0
-    Expected Output: :alice!alice@host PART #test, leaves all channels.
-    Explanation: channelName == "0" (line 60) parts all channels (line 63–71).
+    - Test Case 1: Part channel (existing channel you’re in) ✅
+        Input: PART #test
+        Expected Output: :alice!alice@host PART #test, client leaves channel.
+        Explanation: Broadcasts PART, removes user (RFC 2812, Section 3.2.2).
+    - Test Case 2: Part with reason (existing channel you’re in)  ✅
+        Input: PART #test :bye
+        Expected Output: :alice!alice@host PART #test :bye
+        Explanation: Includes reason in broadcast.
+    - Test Case 3: Invalid channel ✅
+        Input: PART #invalid
+        Expected Output: :irc.server 403 alice #invalid :No such channel
+        Explanation: Sends ERR_NOSUCHCHANNEL (403).
+    - Test Case 4: Part all channels
+        Input: JOIN 0
+        Expected Output: :alice!alice@host PART #test, leaves all channels.
+        Explanation: channelName == "0" (line 60) parts all channels (line 63–71).
+    - PART multiple channels you're in ✅
+        Input: PART #general,#test
+        Expected Output:
+        alice!alice@host PART #general
+        alice!alice@host PART #test
+    - PART multiple channels with a reason ✅
+        Input: PART #general,#test :reason
+        Expected Output:
+        alice!alice@host PART #general :reason
+        alice!alice@host PART #test :reason
+    - PART a channel you're not in ✅
+        Input: PART #notjoined
+        Expected Output: :irc.server 403 alice #notjoined :You're not on that channel
+    - PART with missing channel name ✅
+        Input: PART 
+        Expected Output: :irc.server 461 alice PART :Not enough parameters
+    - PART with malformed channel name ✅
+        Input: PART general
+        Expected Output: :irc.server 403 alice general :No such channel
+    -  PART with extra commas ✅
+        Input: PART #general,,
+        Expected Output: Server Might Respond (depending on implementation):
+                :irc.server 403 alice  :No such channel
+                :irc.server 442 alice #general :You're not on that channel
+    - PART with extra spaces after command ✅
+        Input: PART        #general
+        Expected Output: LimeChat will still parse it correctly
+                :alice!alice@host PART #general
+    - PART after leaving the channel already ✅
+        Input: PART #general
+        Client Input again: PART #general
+        Expected Output: :irc.server 442 alice #general :You're not on that channel //if channel exists
+        Expected Output: :irc.server 442 alice #general :No such channel //if channel does not exist
+.
 7. TOPIC
     Test Case 1: Set topic
     Input: TOPIC #test :Hello world
