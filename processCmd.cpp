@@ -34,11 +34,24 @@ CommandType Server::getCommandtype (const std::string& command)
 
 void Server::splitCommand(std::vector<std::string>& tokens, const std::string& command, std::string::size_type start, std::string::size_type end)
 {
+    while (start < command.length() && (command[start] == ' ' || command[start] == '\t'))
+        ++start;
+    if(start >= command.length())
+        return;
+    end = command.find(' ', start);
+    if (end == std::string::npos)
+    {
+        tokens.push_back(command.substr(start));
+        return;
+    }
     tokens.push_back(command.substr(start, end - start)); // Command name
     start = end + 1;
 
     while (start < command.length())
     {
+        while (start < command.length() && (command[start] == ' ' || command[start] == '\t'))
+            ++start;
+        
         if (command[start] == ':')
         {
             tokens.push_back(command.substr(start)); // Take rest as single token
