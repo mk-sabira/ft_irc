@@ -6,7 +6,7 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/09 10:59:00 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/26 18:38:32 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/27 12:48:36 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -78,7 +78,7 @@ void Server::handlePass(int clientFd, const std::vector<std::string>& tokens)
     }
     if (_clients[clientFd]->isAuthenticated())
     {
-        sendReply(clientFd, macroToString(ERR_ALREADYREGISTERED) + " " + nick + " :Already registered");
+        sendReply(clientFd, macroToString(ERR_ALREADYREGISTERED) + " " + nick + " :Already Authenticated");
         return ;
     }
     if (tokens[1] != getPassword())
@@ -138,18 +138,22 @@ void Server::handleNick(int clientFd, const std::vector<std::string>& tokens)
     {
         if (it->first != clientFd && it->second->getNickname() == tokens[1])
         {
-            sendReply(clientFd, macroToString(ERR_NICKNAMEINUSE) + tokens[1] + " :Nickname is already in use");
+            sendReply(clientFd, macroToString(ERR_NICKNAMEINUSE) + " " + tokens[1] + " :Nickname is already in use");
             return;
         }
     }
     _clients[clientFd]->setNickname(tokens[1]);
     if (_clients[clientFd]->isAuthenticated() && !_clients[clientFd]->getNickname().empty() && !_clients[clientFd]->getUsername().empty())
     {
-        _clients[clientFd]->setRegistered(true);
-        sendReply(clientFd, macroToString(RPL_WELCOME) + " " + nick + " :Welcome to the IRC server");
-        sendReply(clientFd, macroToString(RPL_YOURHOST) + " " + nick + " :Your host is " + _serverName);
-        sendReply(clientFd, macroToString(RPL_CREATED) + " " + nick + " :This server was created today");
-        sendReply(clientFd,  macroToString(RPL_MYINFO) + " " + nick + " :" + _serverName + " 1.0");
+        if (_clients[clientFd]->getNickname().empty())
+             _clients[clientFd]->setRegistered(true);
+        else
+            _clients[clientFd]->setNickname(tokens[1]);
+        sendReply(clientFd, "001 " + _clients[clientFd]->getNickname() + " :Welcome to the IRC server");
+        sendReply(clientFd, "002 " + _clients[clientFd]->getNickname() + " :Your host is " + _serverName);
+        sendReply(clientFd, "003 " + _clients[clientFd]->getNickname() + " :This server was created today");
+        sendReply(clientFd, "004 " + _clients[clientFd]->getNickname() + " :" + _serverName + " 1.0");
+        std::cout << CYAN << "handleNick New client connected: FD = " << clientFd << RESET << std::endl;
     }
 }
 
@@ -179,8 +183,6 @@ bool Server::validateUser(int clientFd, const std::vector<std::string>& tokens, 
             return false;
         }
     }
-    std::cout << "mode: " << hostname << std::endl;
-    std::cout << "serverN: " << serverName << std::endl;
     if (hostname != "0")
     {
         errorMsg = macroToString(ERR_NEEDMOREPARAMS) + " " + nick + " USER :Hostname must be '0'";
@@ -210,7 +212,7 @@ void Server::handleUser(int clientFd, const std::vector<std::string>& tokens)
     std::string errorMsg;
     if (_clients[clientFd]->isRegistered())
     {
-        sendToClient(clientFd, ERR_ALREADYREGISTRED, ":Unauthorized command (already registered)");
+        sendToClient(clientFd, ERR_ALREADYREGISTRED, " * " + tokens[1] + ":already registered");
         return;
     }
     if (!validateUser(clientFd, tokens, errorMsg))
@@ -223,17 +225,12 @@ void Server::handleUser(int clientFd, const std::vector<std::string>& tokens)
     if (_clients[clientFd]->isAuthenticated() && !_clients[clientFd]->getNickname().empty() && !_clients[clientFd]->getUsername().empty())
     {
         _clients[clientFd]->setRegistered(true);
-        sendReply(clientFd, macroToString(RPL_WELCOME) + " " + nick + " :Welcome to the IRC server");
-        sendReply(clientFd, macroToString(RPL_YOURHOST) + " " + nick + " :Your host is " + _serverName);
-        sendReply(clientFd, macroToString(RPL_CREATED) + " " + nick + " :This server was created today");
-        sendReply(clientFd,  macroToString(RPL_MYINFO) + " " + nick + " :" + _serverName + " 1.0");
-        std::cout << CYAN << "New client connected: FD = " << clientFd << RESET << std::endl;
+        sendReply(clientFd, "001 " + _clients[clientFd]->getNickname() + " :Welcome to the IRC server");
+        sendReply(clientFd, "002 " + _clients[clientFd]->getNickname() + " :Your host is " + _serverName);
+        sendReply(clientFd, "003 " + _clients[clientFd]->getNickname() + " :This server was created today");
+        sendReply(clientFd, "004 " + _clients[clientFd]->getNickname() + " :" + _serverName + " 1.0");
+        std::cout << CYAN << "handleUser New client connected: FD = " << clientFd << RESET << std::endl;
     }
-    std::cout << "nick Name: "<< _clients[clientFd]->getNickname() << std::endl;
-    std::cout << "user: "<< _clients[clientFd]->getNickname() << std::endl;
-    std::cout << "realname: "<< _clients[clientFd]->getNickname() << std::endl;
-    std::cout << "token2: "<< tokens[2] << std::endl;
-    std::cout << "token3: "<< tokens[3] << std::endl;
 }
 
 void Server::sendReply(int clientFd, const std::string& message)

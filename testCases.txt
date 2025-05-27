@@ -79,29 +79,27 @@ added by Sabira
 1. PASS
     Test Case 1: Valid password
     Input: PASS 123
-        Expected Output: No reply, client authenticated.
+        Expected Output: No reply, client authenticated.✅
         Explanation: handlePass sets isAuthenticated(true) (line 36). Silent per RFC 2812 (Section 3.1.1).
     Test Case 2: Missing password
     Input: PASS
-        Expected Output: :irc.server 461 * PASS :Not enough parameters
+        Expected Output: :irc.server 461 nick :Not enough parameters✅
         Explanation: tokens.size() < 2 (line 24) sends ERR_NEEDMOREPARAMS (461).
     Test Case 3: Wrong password
     Input: PASS wrong
-        Expected Output: :irc.server 464 * :Password incorrect, client disconnected.
+        Expected Output: :irc.server 464 * :Password incorrect, client disconnected.✅
         Explanation: tokens[1] != _password (line 32) sends ERR_PASSWDMISMATCH (464), calls removeClient.
     Test Case 4: Already authenticated
     Input: PASS 123 (after PASS 123)
-        Expected Output: :irc.server 462 alice :Unauthorized command (already registered)
+        Expected Output: :irc.server 462 alice :Unauthorized command (already registered)✅
         Explanation: isAuthenticated() true (line 28) sends ERR_ALREADYREGISTERED (462).
     [NEW] Test Case 5: Partial password command
     Input: PA^DSS 1^D23 (via nc -C, ^D = Ctrl+D)
-        Expected Output: No reply until full command, then authenticates.
+        Expected Output: No reply until full command, then authenticates.✅
         Explanation: receiveClientData aggregates partial data (subject’s nc test), processes PASS 123 when complete.
 2. NICK
     Test Case 1: Valid nickname
-    Input: NICK alice (after PASS 123, USER alice 0 * :Alice Smith)
-    Expected Output:
-    text
+    Input: NICK alice (only if!!!!!  PASS 123, USER alice 0 * :Alice Smith)
 
         :irc.server 001 alice :Welcome to the IRC server
         :irc.server 002 alice :Your host is irc.server
@@ -109,24 +107,26 @@ added by Sabira
         :irc.server 004 alice :irc.server 1.0
     Explanation: validateNick passes (line 45), registers client (line 61–66), sends RPL_WELCOME (001) etc. (lines 67–70).
     Test Case 2: Missing nickname
-    Input: NICK
-    Expected Output: :irc.server 431 * :No nickname given
-    Explanation: tokens.size() < 2 (line 40) sends ERR_NONICKNAMEGIVEN (431).
+        Input: NICK
+        Expected Output: :irc.server 431 * :No nickname given✅
+        Explanation: tokens.size() < 2 (line 40) sends ERR_NONICKNAMEGIVEN (431).
     Test Case 3: Invalid nickname
-    Input: NICK a@b
-    Expected Output: :irc.server 432 * a@b :Erroneous nickname
-    Explanation: validateNick fails (line 26–37), sends ERR_ERRONEUSNICKNAME (432).
+        Input: NICK a@b
+        Expected Output: :irc.server 432 * a@b :Erroneous nickname✅
+        Explanation: validateNick fails (line 26–37), sends ERR_ERRONEUSNICKNAME (432).
     Test Case 4: Nickname in use
-    Input: NICK alice (after another client sets alice)
-    Expected Output: :irc.server 433 * alice :Nickname is already in use
-    Explanation: Duplicate check (line 52–57) sends ERR_NICKNAMEINUSE (433).
+        Input: NICK alice (after another client sets alice)
+        Expected Output: :irc.server 433 * alice :Nickname is already in use✅
+        Explanation: Duplicate check (line 52–57) sends ERR_NICKNAMEINUSE (433).
     [NEW] Test Case 5: Partial nickname command
-    Input: NI^DCK ali^Dce
-    Expected Output: No reply until full command, then registers alice.
-    Explanation: receiveClientData buffers partial data, processes NICK alice when complete.
+        Input: NI^DCK ali^Dce
+        Expected Output: No reply until full command, then registers alice.✅
+        Explanation: receiveClientData buffers partial data, processes NICK alice when complete.
+    Test Case 5: test with spaces
+        Input:     nick      test✅
 3. USER
     Test Case 1: Valid user registration
-    Input: USER alice 0 * :Alice Smith (after PASS 123, NICK alice)
+    Input: USER alice 0 * :Alice Smith (after PASS 123, NICK alice)✅
     Expected Output:
     text
         :irc.server 001 alice :Welcome to the IRC server
@@ -134,34 +134,35 @@ added by Sabira
         :irc.server 003 alice :This server was created today
         :irc.server 004 alice :irc.server 1.0
     Explanation: validateUser passes (lines 4–37), registers client (line 115–120), sends RPL_WELCOME (lines 121–124).
+    
     Test Case 2: Missing parameters
-    Input: USER alice
-    Expected Output: :irc.server 461 * USER :Not enough parameters
-    Explanation: tokens.size() < 5 (line 6) sends ERR_NEEDMOREPARAMS (461).
+        Input: USER alice
+        Expected Output: :irc.server 461 * USER :Not enough parameters✅
+        Explanation: tokens.size() < 5 (line 6) sends ERR_NEEDMOREPARAMS (461).
     Test Case 3: Invalid username
     Input: USER a@b 0 * :realname
-    Expected Output: :irc.server 461 * USER :Username contains invalid characters
-    Explanation: Username validation fails (line 15–20), sends ERR_NEEDMOREPARAMS.
+        Expected Output: :irc.server 461 * USER :Username contains invalid characters✅
+        Explanation: Username validation fails (line 15–20), sends ERR_NEEDMOREPARAMS.
     Test Case 4: Already registered
-    Input: USER alice 0 * :realname (after registration)
-    Expected Output: :irc.server 462 alice :Unauthorized command (already registered)
-    Explanation: isRegistered() true (line 104) sends ERR_ALREADYREGISTERED (462).
+        Input: USER alice 0 * :realname (after registration)
+        Expected Output: :irc.server 462 alice :Unauthorized command (already registered) ✅
+        Explanation: isRegistered() true (line 104) sends ERR_ALREADYREGISTERED (462).
 4. PRIVMSG
     Test Case 1: Valid channel message
-        Input: PRIVMSG #test :hello world (from alice, in #test with bob)
+        Input: PRIVMSG #test :hello world (from alice, in #test with bob)✅
         Expected Output: Bob receives :alice!alice@host PRIVMSG #test :hello world
         Explanation: handlePrivmsg broadcasts to channel members (lines 182–185).
     Test Case 2: No recipient
         Input: PRIVMSG
-        Expected Output: :irc.server 411 alice PRIVMSG :No recipient given
+        Expected Output: :irc.server 411 alice PRIVMSG :No recipient given✅
         Explanation: tokens.size() < 3 (line 164) sends ERR_NORECIPIENT (411).
     Test Case 3: No text
         Input: PRIVMSG #test :
-        Expected Output: :irc.server 412 alice PRIVMSG :No text to send
+        Expected Output: :irc.server 412 alice PRIVMSG :No text to send✅
         Explanation: message.empty() (line 178) sends ERR_NOTEXTTOSEND (412).
     Test Case 4: Invalid target
         Input: PRIVMSG #invalid hello
-        Expected Output: :irc.server 401 alice #invalid :No such nick/channel
+        Expected Output: :irc.server 401 alice #invalid :No such nick/channel✅
         Explanation: No channel invalid (line 187) sends ERR_NOSUCHNICK (401).
     [NEW] Test Case 5: Multi-client channel message
         Input: PRIVMSG #test :hello all (from alice, #test has bob, charlie)

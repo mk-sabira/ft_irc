@@ -6,7 +6,7 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/02 10:25:46 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/25 12:23:44 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/27 12:30:00 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -368,7 +368,7 @@ void Server::sendError(int userFd, int errorCode, const std::string& message)
 void Server::sendToClient(int fd, int code, const std::string& message)
 {
     std::stringstream ss;
-    ss << code << " " << _clients[fd]->getNickname() << " " << message<<std::endl;
+    ss << code << " " << _clients[fd]->getNickname() << " " << message;
     sendReply(fd, ss.str());
 }
 
