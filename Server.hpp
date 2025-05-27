@@ -97,7 +97,7 @@ private:
 	    
 	    void acceptNewClient();
 	    void receiveClientData(int clientFd);
-	    void processCommand(int clientFd, const std::string& cmd);
+	    bool processCommand(int clientFd, const std::string& cmd);
 	    void removeClient(int clientFd);
 	    void splitCommand(std::vector<std::string>& tokens, const std::string& command, std::string::size_type start, std::string::size_type end );
 	

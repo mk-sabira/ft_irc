@@ -214,13 +214,16 @@ void Server::receiveClientData(int clientFd)
         clientInput.erase(0, pos + 1);
 
         if (!command.empty())
-            processCommand(clientFd, command);
+        {
+            if (!processCommand(clientFd, command))
+                return ; // Client deleted: stop processing further commands
+        }
         else
             std::cout << "Empty command ignored from FD " << clientFd << std::endl;
     }
 }
 
-void Server::processCommand(int clientFd, const std::string& command)
+bool Server::processCommand(int clientFd, const std::string& command)
 {
     std::string nick = _clients[clientFd]->getNickname().empty() ? "*" : _clients[clientFd]->getNickname();
     std::vector<std::string> tokens;
@@ -231,7 +234,7 @@ void Server::processCommand(int clientFd, const std::string& command)
     else
         splitCommand(tokens, command, start, end);
     if (tokens.empty())
-        return ;
+        return true;
     CommandType cmd = getCommandtype(tokens[0]);
     switch (cmd)
     {
@@ -273,7 +276,7 @@ void Server::processCommand(int clientFd, const std::string& command)
             break;
         case CMD_QUIT:
             handleQuit(clientFd, tokens);
-            break;
+            return false;
         case CMD_UNKNOWN:
         default:
             std::cout << "New command: " << command << std::endl;
@@ -281,6 +284,7 @@ void Server::processCommand(int clientFd, const std::string& command)
             break;
 
     }
+    return true;
 }
 
 void Server::shutdown()
