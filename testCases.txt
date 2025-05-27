@@ -44,9 +44,6 @@ INVITE:
         output : No such channel
         correct output : Not enough parameters
 
-KICK:
-    - Kick a user from a channel (no comment)
-        * send raw message to server "KICK #general user1" isn't sent ❌
         
 MODE:
     - View channel modes✅
@@ -286,18 +283,52 @@ added by Sabira
     Input: KICK #test bob :rude
         Expected Output: :alice!alice@host KICK #test bob :rude, bob removed.
         Explanation: Broadcasts (line 217), removes user (line 218).
-        Test Case 2: Missing parameters
+    Test Case 2: Missing parameters
     Input: KICK #test
         Expected Output: :irc.server 461 alice KICK :Not enough parameters
         Explanation: tokens.size() < 3 (line 192) sends ERR_NEEDMOREPARAMS (461).
-        Test Case 3: Non-operator
+    Test Case 3: Non-operator
     Input: KICK #test bob (non-operator)
         Expected Output: :irc.server 482 alice #test :You're not channel operator
         Explanation: !isOperator (line 203) sends ERR_CHANOPRIVSNEEDED (482).
-        Test Case 4: Target not in channel
+    Test Case 4: Target not in channel
     Input: KICK #test bob
         Expected Output: :irc.server 441 alice bob #test :They aren't on that channel
         Explanation: !isUser(targetFd) (line 213) sends ERR_USERNOTINCHANNEL (441).
+    - Kicking a user with a reason
+    Input: KICK #test bob :being disruptive 
+        Expected Output: :alice!alice@host KICK #test bob :being disruptive
+        Explanation: alice kicks bob from the channel with a custom reason that will be broadcast to the remaining users in the channel
+    - Kicking from a channel that doesn't exist
+    Input: KICK #doesnotexist bob
+        Expected Output: :irc.server 403 alice #doesnotexist :No such channel
+        Explanation: The channel doesn't exist. The server responds with ERR_NOSUCHCHANNEL (403).
+    - Kicking a user while not on the channel yourself
+    Input: KICK #test bob
+        Expected Output: :irc.server 442 alice #test :You're not on that channel
+        Explanation: alice is trying to kick someone from a channel she is not part of. Server replies with ERR_NOTONCHANNEL (442).
+    - Kicking multiple users from one channel
+    Input: KICK #test bob,charlie :cleanup
+        Expected Output: :alice!alice@host KICK #test bob :cleanup  
+                         :alice!alice@host KICK #test charlie :cleanup
+
+        Explanation: Multiple users are kicked from the same channel in a single command. A message is sent for each user kicked.
+    - Kicking from multiple channels (one user per channel)
+    Input: KICK #chan1,#chan2 bob,charlie
+
+        Expected Output: :alice!alice@host KICK #chan1 bob :alice  
+                         :alice!alice@host KICK #chan2 charlie :alice
+
+        Explanation: The command kicks bob from #chan1 and charlie from #chan2. The server processes parallel lists of channels and users.
+    - Invalid syntax — too few parameters
+    Input: KICK  or  "           kick"   or  "kick              "
+        Expected Output: :irc.server 461 alice KICK :Not enough parameters
+        Explanation: Missing channel and user. The server returns ERR_NEEDMOREPARAMS (461).
+    - Too many users or channels — mismatched list sizes
+    Input: KICK #chan1,#chan2 bob
+        Expected Output: :irc.server 461 alice KICK :Mismatched parameters
+        Explanation: Number of channels and users don't match unless only one user is provided for all channels. If not allowed by your spec, return an error.
+
 10. MODE
     Test Case 1: Query channel modes
     Input: MODE #test
