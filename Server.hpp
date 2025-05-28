@@ -6,7 +6,7 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/02 10:10:44 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/25 11:57:22 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/28 10:21:11 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -95,6 +95,7 @@ private:
 	    std::map<std::string, Channel*> _channels; // <name, obj> // Dina Channel // Taha compilation error
 	    std::map<std::string, int> _nickToFd; // <nickname, fd> // Dina Channel // Taha compilation error
 	    
+		void welcomeMessage();
 	    void acceptNewClient();
 	    void receiveClientData(int clientFd);
 	    bool processCommand(int clientFd, const std::string& cmd);
@@ -121,6 +122,7 @@ private:
 	    void handlePart(int clientFd, const std::string& command);
 	    void handleQuit(int clientFd, const std::vector<std::string>& tokens);
 		std::string macroToString(int macro);
+		void shutdownMessage();
 public:
 		static volatile sig_atomic_t keepRunning;
 	    Server(const std::string& port, const std::string& password);

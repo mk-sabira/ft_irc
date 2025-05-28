@@ -6,7 +6,7 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/02 10:25:46 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/27 12:30:00 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/28 10:22:11 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,8 +51,8 @@ bool Server::serverSetup()
         std::cerr << "Socket creation failed" << std::endl;
         return (false);
     }
-    int opt = 1;
-    if (setsockopt(_serverFd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
+    int reuse_addr = 1;
+    if (setsockopt(_serverFd, SOL_SOCKET, SO_REUSEADDR, &reuse_addr, sizeof(reuse_addr)) < 0)
     {
         std::cerr << "Setsockopt failed" << std::endl;
         close(_serverFd);
@@ -67,35 +67,53 @@ bool Server::serverSetup()
     _serverAdd.sin_family = AF_INET;
     _serverAdd.sin_addr.s_addr = INADDR_ANY;
     _serverAdd.sin_port = htons(_port);
-    
     if (bind(_serverFd, (struct sockaddr*)& _serverAdd, sizeof(_serverAdd)) < 0)
     {
         std::cout << "Bind failed" << std::endl;
+        close(_serverFd);
         return (false);
     }
-
     if (listen(_serverFd, SOMAXCONN) == -1)
     {
         std::cout << "Listen failed" << std::endl;
+        close(_serverFd);
         return (false);
     }
-    
     struct pollfd serverPollFd;
     serverPollFd.fd = _serverFd;
     serverPollFd.events = POLLIN;
     serverPollFd.revents = 0;
     _fds.push_back(serverPollFd);
-    
     return (true);
+}
+
+void Server::welcomeMessage()
+{
+    std::cout << GREEN
+          << "    ╔══════════════════════════════════════════════════════╗\n"
+          << "    ║                                                      ║\n"
+          << "    ║     ██████╗ ████████╗     ██████╗  ███████╗ ███████  ║\n"
+          << "    ║    ██╔════╝    ██╔══╗       ██╔═══ ██╗  ██  ██   ██  ║\n"
+          << "    ║    ██║███     ╗██           ██║    ██ ██    ██       ║\n"
+          << "    ║    ██║         ██║          ██║    ██   ██  ██   ██  ║\n"
+          << "    ║    ██║         ██         ██████   ██   ██  ███████  ║\n"
+          << "    ║    ╚═╝      ╚═════╝██████╚══════╝          ╚══════╝  ║\n"
+          << "    ║                                                      ║\n"
+          << "    ║     💬IRC Server is now live and listening           ║\n"
+          << "    ║                                                      ║\n"
+          << "    ║                                                      ║\n"
+          << "    ╚══════════════════════════════════════════════════════╝\n"
+          << RESET << std::endl;
+
+
 }
 
 bool Server::runServer()
 {
-    std::cout << GREEN << "IRC Server is running" << RESET << std::endl;
+    Server::welcomeMessage();
 
-    // Add stdin to poll loop for Ctrl+D
     struct pollfd stdinFd;
-    stdinFd.fd = 0; // STDIN_FILENO
+    stdinFd.fd = 0;
     stdinFd.events = POLLIN;
     stdinFd.revents = 0;
     _fds.push_back(stdinFd);
@@ -116,11 +134,11 @@ bool Server::runServer()
         {
             if (_fds[i].revents & POLLIN)
             {
-                if (_fds[i].fd == 0) // stdin (Ctrl+D)
+                if (_fds[i].fd == 0)
                 {
                     char buf[1];
                     ssize_t bytes = read(0, buf, 1);
-                    if (bytes == 0) // EOF (Ctrl+D)
+                    if (bytes == 0)
                     {
                         std::cout << "Received Ctrl+D, shutting down server..." << std::endl;
                         Server::keepRunning = 0;
@@ -152,14 +170,12 @@ void Server::acceptNewClient()
         std::cerr << "Failed to accept new clinet" << std::endl;
         return ;
     }
-
     if (fcntl(clientFd, F_SETFL, O_NONBLOCK) == -1)
     {
         std::cerr << "Failed to set client socket to non-blocking" << std::endl;
         close(clientFd);
         return ;
     }
-
     struct pollfd clientPollFd;
     clientPollFd.fd = clientFd;
     clientPollFd.events = POLLIN;
@@ -170,7 +186,7 @@ void Server::acceptNewClient()
     Client* client = new Client();
     client->setFd(clientFd);
     client->setAuthenticated(false);
-    client->setHostname(inet_ntoa(clientAddr.sin_addr)); // taha trying to fix lime chat
+    client->setHostname(inet_ntoa(clientAddr.sin_addr));
     _clients[clientFd] = client;
 }
 
@@ -184,10 +200,7 @@ void Server::receiveClientData(int clientFd)
     if (bytesRead < 0)
     {
         if (errno == EAGAIN || errno == EWOULDBLOCK)
-        {
-            std::cout << "No data on FD " << clientFd << " (EAGAIN)" << std::endl;   
             return ;
-        }
         std::cerr << "Error reading from client FD: " << clientFd << ": " << std::strerror(errno) << std::endl;
         removeClient(clientFd);
         return ;
@@ -216,7 +229,7 @@ void Server::receiveClientData(int clientFd)
         if (!command.empty())
         {
             if (!processCommand(clientFd, command))
-                return ; // Client deleted: stop processing further commands
+                return ;
         }
         else
             std::cout << "Empty command ignored from FD " << clientFd << std::endl;
@@ -302,7 +315,21 @@ void Server::shutdown()
         _serverFd = -1;
     }
     _fds.clear();
-    std::cout << "Server shutdown complete." << std::endl;
+    shutdownMessage();
+}
+
+void Server::shutdownMessage()
+{
+    std::cout << GREEN
+              << "    ╔══════════════════════════════════════════════════════╗\n"
+              << "    ║                                                      ║\n"
+              << "    ║            💤 FT_IRC Server is shutting down...      ║\n"
+              << "    ║                                                      ║\n"
+              << "    ║     Thank you for chatting with us!                  ║\n"
+              << "    ║     See you next time! 👋                            ║\n"
+              << "    ║                                                      ║\n"
+              << "    ╚══════════════════════════════════════════════════════╝\n"
+              << RESET << std::endl;
 }
 
 // ----------------- SETTERS ----------------- 
