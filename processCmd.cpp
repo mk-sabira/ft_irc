@@ -265,24 +265,18 @@ void Server::joinCommand(int userFd, std::string channelName, std::string key)
 {
     if (channelName == "0")
     {
-        for (std::map<std::string, Channel*>::iterator it = _channels.begin(); it != _channels.end(); )
+        std::vector<std::string> channelsToPart;
+        for (std::map<std::string, Channel*>::iterator it = _channels.begin(); it != _channels.end(); ++it)
         {
-            Channel* channel = it->second;
-            if (channel->isUser(userFd)) {
-                channel->kickUser(userFd);
-
-                std::string partMsg = ":" + _clients[userFd]->getPrefix() + " PART " + channel->getName();
-                channel->boolBroadCastToAll(partMsg, this, false); // Use user prefix
-
-                if (channel->getUserFds().empty()) {
-                    delete channel;
-                    _channels.erase(it++);
-                    continue;
-                }
-            }
-            ++it;
+            if (it->second->isUser(userFd))
+                channelsToPart.push_back(it->first);
         }
-        return;
+
+        for (size_t i = 0; i < channelsToPart.size(); ++i)
+        {
+            partUser(userFd, channelsToPart[i], "");
+        }
+        return ;
     }
 
     if (channelName.empty() || channelName[0] != '#')

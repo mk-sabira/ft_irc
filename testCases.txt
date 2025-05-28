@@ -1,6 +1,4 @@
-❌ unknown command when writing spaces before a valid command "    /topic"
-    limechat :Error(401): No such nick/channel
-    ours: :irc.server 421  :Unknown command
+
 
 join, topic, spaces before the command
 JOIN: 
