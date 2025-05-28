@@ -6,7 +6,7 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/02 10:10:44 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/28 10:21:11 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/28 11:02:07 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,20 +23,15 @@
 #include <fcntl.h>
 #include <vector>
 #include <map>
-#include <sstream>  // Needed for std::istringstream
-
-
 #include <csignal>
-#include <cstring>
-
 #include <unistd.h> 
 #include <netinet/in.h>   // For sockaddr_in structure, which is used for specifying socket addresses
 #include <poll.h>
-
 #include "colors.hpp"
 #include "Client.hpp"
-#include "Channel.hpp" // Dina Channel
-
+#include "Channel.hpp"
+#include <cerrno>
+#include <arpa/inet.h>
 
 #define ERR_NEEDMOREPARAMS      461 // PASS, USER, PING, PONG, PRIVMSG
 #define ERR_ALREADYREGISTERED   462 // PASS, USER

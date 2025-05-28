@@ -6,18 +6,16 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/09 07:53:52 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/28 10:21:36 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/28 11:02:40 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "main.hpp"
 
-
 void signalHandler(int signum)
 {
     (void)signum;
     Server::keepRunning = 0;
-    // signal(SIGINT, SIG_IGN);
     signal(SIGINT, SIG_DFL);
     const char msg[] = "\nReceived SIGINT, shutting down server...\n";
     write(STDOUT_FILENO, msg, sizeof(msg) - 1);
@@ -49,7 +47,6 @@ int main(int argc, char **argv)
             std::cerr << "Server setup failed." << std::endl;
             return (1);
         }
-
         server.runServer();
     }
     catch(const std::exception& e)

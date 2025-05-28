@@ -6,13 +6,14 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/08 13:59:47 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/25 09:10:18 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/28 11:03:18 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Client.hpp"
 
-Client::Client() {
+Client::Client()
+{
     _fd = -1;
     _buffer = "";
     _nickname = "";
@@ -75,17 +76,11 @@ bool Client::isRegistered() const
     return (_registered);
 }
 
-// std::string Client::getPrefix() const  // Dina channel // commented by Taha uncomment later when we get a host
-// {
-//     return this->_nickname + "!" + this->_username + "@" + this->_hostname;
-// }
-
 std::string Client::getPrefix() const
 {
     return _nickname + "!" + _username + "@" + _hostname;
 }
 
-//sabira added
 std::string Client::getHostname() const
 {
     return _hostname;
@@ -127,7 +122,6 @@ void Client::setRegistered(bool registered)
     _registered = registered;
 }
 
-// Taha trying to fix lime chat
 void Client::setHostname(const std::string& hostname)
 {
     _hostname = hostname;

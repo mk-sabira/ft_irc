@@ -3,17 +3,18 @@
 #                                                         :::      ::::::::    #
 #    Makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: mrhelmy <mrhelmy@student.42.fr>            +#+  +:+       +#+         #
+#    By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/05/02 10:09:42 by bmakhama          #+#    #+#              #
-#    Updated: 2025/05/17 17:43:26 by mrhelmy          ###   ########.fr        #
+#    Updated: 2025/05/28 11:00:23 by bmakhama         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
 C++ = c++
 CXXFLAGS = -Wall -Wextra -Werror --std=c++98
 NAME = ircserv
-SRC = main.cpp Server.cpp Client.cpp processCmd.cpp Channel.cpp utils.cpp 
+SRC = main.cpp Server.cpp Client.cpp parseCmd.cpp processCmd.cpp \
+	Channel.cpp serverUtils.cpp  
 OBJ = ${SRC:.cpp=.o}
 
 all: $(NAME)

@@ -6,13 +6,11 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/02 10:25:46 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/28 10:22:11 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/28 10:59:32 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Server.hpp"
-#include <cerrno>
-#include <arpa/inet.h>
 
 volatile sig_atomic_t Server::keepRunning = 1;
 
@@ -87,26 +85,6 @@ bool Server::serverSetup()
     return (true);
 }
 
-void Server::welcomeMessage()
-{
-    std::cout << GREEN
-          << "    ╔══════════════════════════════════════════════════════╗\n"
-          << "    ║                                                      ║\n"
-          << "    ║     ██████╗ ████████╗     ██████╗  ███████╗ ███████  ║\n"
-          << "    ║    ██╔════╝    ██╔══╗       ██╔═══ ██╗  ██  ██   ██  ║\n"
-          << "    ║    ██║███     ╗██           ██║    ██ ██    ██       ║\n"
-          << "    ║    ██║         ██║          ██║    ██   ██  ██   ██  ║\n"
-          << "    ║    ██║         ██         ██████   ██   ██  ███████  ║\n"
-          << "    ║    ╚═╝      ╚═════╝██████╚══════╝          ╚══════╝  ║\n"
-          << "    ║                                                      ║\n"
-          << "    ║     💬IRC Server is now live and listening           ║\n"
-          << "    ║                                                      ║\n"
-          << "    ║                                                      ║\n"
-          << "    ╚══════════════════════════════════════════════════════╝\n"
-          << RESET << std::endl;
-
-
-}
 
 bool Server::runServer()
 {
@@ -300,38 +278,6 @@ bool Server::processCommand(int clientFd, const std::string& command)
     return true;
 }
 
-void Server::shutdown()
-{
-    for (std::map<int, Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it)
-    {
-        sendReply(it->first, "ERROR :Server shutting down");
-        close(it->first);
-        delete it->second;
-    }
-    _clients.clear();
-    if (_serverFd != -1)
-    {
-        close(_serverFd);
-        _serverFd = -1;
-    }
-    _fds.clear();
-    shutdownMessage();
-}
-
-void Server::shutdownMessage()
-{
-    std::cout << GREEN
-              << "    ╔══════════════════════════════════════════════════════╗\n"
-              << "    ║                                                      ║\n"
-              << "    ║            💤 FT_IRC Server is shutting down...      ║\n"
-              << "    ║                                                      ║\n"
-              << "    ║     Thank you for chatting with us!                  ║\n"
-              << "    ║     See you next time! 👋                            ║\n"
-              << "    ║                                                      ║\n"
-              << "    ╚══════════════════════════════════════════════════════╝\n"
-              << RESET << std::endl;
-}
-
 // ----------------- SETTERS ----------------- 
 
 void Server::setPort(int& port)
@@ -361,11 +307,6 @@ Client* Server::getClientByNickname(const std::string& nickname)
     return NULL;
 }
 
-const char* Server::PortOutOfBound::what() const throw()
-{
-    return ("Port must be between 1024 and 65535");
-}
-
 std::string Server::getClientPrefix(int fd) const // Taha fixed
 {
     std::map<int, Client*>::const_iterator it = _clients.find(fd);
@@ -374,83 +315,26 @@ std::string Server::getClientPrefix(int fd) const // Taha fixed
     return "";
 }
 
-void Server::broadcastToAll(const Channel& channel, const std::string& msg, int excludeFd) // Taha compilation Error
+CommandType Server::getCommandtype (const std::string& command)
 {
-    const std::set<int>& users = channel.getUserFds();
-
-    for (std::set<int>::const_iterator it = users.begin(); it != users.end(); ++it) {
-        if (*it != excludeFd)
-            sendReply(*it, msg);
-    }
-}
-
-// -------------- UTILS ----------------
-
-void Server::sendError(int userFd, int errorCode, const std::string& message)
-{
-    std::string nickname = _clients[userFd]->getNickname();
-    std::stringstream ss;
-    ss  << errorCode << " "
-       << (nickname.empty() ? "*" : nickname) << " "
-       << message;
-    sendReply(userFd, ss.str());
-}
-
-void Server::sendToClient(int fd, int code, const std::string& message)
-{
-    std::stringstream ss;
-    ss << code << " " << _clients[fd]->getNickname() << " " << message;
-    sendReply(fd, ss.str());
-}
-
-void Server::boolSendToClient(int fd, int code, const std::string& message)
-{
-    std::stringstream ss;
-    ss << code << " " << _clients[fd]->getNickname() << " " << message;
-    boolSendReply(fd, ss.str(), true);
+    if (command == "PASS" || command == "pass") return CMD_PASS;
+    if (command == "NICK" || command == "nick") return CMD_NICK;
+    if (command == "USER" || command == "user") return CMD_USER;
+    if (command == "PING" || command == "ping") return CMD_PING;
+    if (command == "PONG" || command == "pong") return CMD_PONG;
+    if (command == "PRIVMSG" || command == "privmsg") return CMD_PRIVMSG;
+    if (command == "JOIN" || command == "/join") return CMD_JOIN;
+    if (command == "TOPIC" || command == "/topic") return CMD_TOPIC;
+    if (command == "INVITE" || command == "/invite") return CMD_INVITE;
+    if (command == "KICK" || command == "/kick") return CMD_KICK;
+    if (command == "MODE" || command == "/mode") return CMD_MODE;
+    if (command == "PART" || command == "/part") return CMD_PART;
+    if (command == "QUIT" || command == "quit") return CMD_QUIT;
+    return CMD_UNKNOWN;
 }
 
 
-// --------- CLEANING UTILS ----------------
-
-void Server::removeClient(int clientFd)
+const char* Server::PortOutOfBound::what() const throw()
 {
-    close(clientFd);
-    // Remove client from all channels first - Dina
-    for (std::map<std::string, Channel*>::iterator it = _channels.begin(); it != _channels.end(); )
-    {
-        Channel* channel = it->second;
-        if (channel->isUser(clientFd))
-        {
-            channel->removeUser(clientFd);
-            channel->removeOperator(clientFd); // Safe even if not operator
-
-            // Optional: delete empty channel
-            if (channel->getUserFds().empty())
-            {
-                delete channel;
-                _channels.erase(it++);
-                continue;
-            }
-        }
-        ++it;
-    }
-    for (std::vector<struct pollfd>::iterator it = _fds.begin(); it != _fds.end(); ++it)
-    {
-        if (it->fd == clientFd)
-        {
-            _fds.erase(it);
-            break;
-        }
-    }
-
-    // Delete the Client object and erase from map
-    std::map<int, Client*>::iterator clientIt = _clients.find(clientFd);
-    if (clientIt != _clients.end())
-    {
-        delete clientIt->second; // Free the memory - Dina
-        _clients.erase(clientIt); // Remove from map - Dina
-    }
-
-    std::cout << "Client FD " << clientFd << RED << " disconnected!" << RESET << std::endl;
+    return ("Port must be between 1024 and 65535");
 }
