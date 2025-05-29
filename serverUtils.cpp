@@ -147,6 +147,18 @@ void Server::removeClient(int clientFd)
 
 // ------------ helper functions ----------
 
+std::vector<std::string> Server:: splitByComma(const std::string& str)
+{
+    std::vector<std::string> result;
+    std::stringstream ss(str);
+    std::string item;
+
+    while (std::getline(ss, item, ','))
+        result.push_back(item);
+
+    return result;
+}
+
 std::string vecToStr(std::vector<std::string> vec) // Taha changed form string& to string
 {
     std::string str;

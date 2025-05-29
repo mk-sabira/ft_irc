@@ -149,6 +149,7 @@ public:
 	    };
 	    
 	    //----- helper functions----------- // Dina Channel
+		std::vector<std::string> splitByComma(const std::string& str);
 		void sendReply(int clientFd, const std::string& message);
 		void boolSendReply(int clientFd, const std::string& message, bool useServerPrefix); // taha fixing limechat
 		void sendRaw(int clientFd, const std::string& rawMessage); // taha for end command

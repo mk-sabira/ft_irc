@@ -446,48 +446,60 @@ void Server::kickCommand(int senderFd, const std::vector<std::string>& tokens)
         return;
     }
 
-    std::string channelName = tokens[1];
-    std::string targetNick = tokens[2];
+    std::vector<std::string> channels = splitByComma(tokens[1]);
+    std::vector<std::string> targetNicks = splitByComma(tokens[2]);
     std::string reason = (tokens.size() >= 4) ? tokens[3].substr(1) : _clients[senderFd]->getNickname();
 
-    std::map<std::string, Channel*>::iterator it = _channels.find(channelName);
-    if (it == _channels.end())
+    if (channels.size() != 1 && channels.size() != targetNicks.size())
     {
-        sendReply(senderFd, "403 " + channelName + " :No such channel");
+        sendReply(senderFd, "461 KICK :Channel/Nick list mismatch");
         return;
     }
 
-    Channel* channel = it->second;
-    if (!channel->isUser(senderFd))
+    for (size_t i = 0; i < targetNicks.size(); ++i)
     {
-        sendReply(senderFd, "442 " + channelName + " :You're not on that channel");
-        return;
+        std::string channelName = (channels.size() == 1) ? channels[0] : channels[i];
+        std::string targetNick = targetNicks[i];
+
+        std::map<std::string, Channel*>::iterator it = _channels.find(channelName);
+        if (it == _channels.end())
+        {
+            sendReply(senderFd, "403 " + channelName + " :No such channel");
+            continue;
+        }
+
+        Channel* channel = it->second;
+        if (!channel->isUser(senderFd))
+        {
+            sendReply(senderFd, "442 " + channelName + " :You're not on that channel");
+            continue;
+        }
+
+        if (!channel->isOperator(senderFd))
+        {
+            sendReply(senderFd, "482 " + channelName + " :You're not channel operator");
+            continue;
+        }
+
+        Client* targetClient = getClientByNickname(targetNick);
+        if (!targetClient)
+        {
+            sendReply(senderFd, "401 " + targetNick + " :No such nick");
+            continue;
+        }
+
+        int targetFd = targetClient->getFd();
+        if (!channel->isUser(targetFd))
+        {
+            sendReply(senderFd, "441 " + targetNick + " " + channelName + " :They aren't on that channel");
+            continue;
+        }
+
+        std::string kickMsg = ":" + _clients[senderFd]->getPrefix() + " KICK " + channelName + " " + targetNick + " :" + reason;
+
+        channel->broadcastToAllRaw(kickMsg, this);
+        channel->kickUser(targetFd);
     }
-
-    if (!channel->isOperator(senderFd))
-    {
-        sendReply(senderFd, "482 " + channelName + " :You're not channel operator");
-        return;
-    }
-
-    Client* targetClient = getClientByNickname(targetNick);
-    if (!targetClient)
-    {
-        sendReply(senderFd, "401 " + targetNick + " :No such nick");
-        return;
-    }
-
-    int targetFd = targetClient->getFd();
-    if (!channel->isUser(targetFd))
-    {
-        sendReply(senderFd, "441 " + targetNick + " " + channelName + " :They aren't on that channel");
-        return;
-    }
-
-    std::string kickMsg = ":" + _clients[senderFd]->getPrefix() + " KICK " + channelName + " " + targetNick + " :" + reason;
-
-    channel->broadcastToAllRaw(kickMsg, this);
-    channel->kickUser(targetFd);
 }
 
 void Server::modeCommand(int userFd, const std::vector<std::string>& tokens)
