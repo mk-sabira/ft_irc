@@ -6,7 +6,7 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/09 10:59:00 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/30 09:56:54 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/30 10:41:55 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -114,7 +114,7 @@ void Server::handlePrivmsg(int senderFd, const std::vector<std::string>& tokens)
 {
     if (!_clients[senderFd]->isRegistered())
     {
-        sendReply(senderFd, macroToString(451) + " * :You have not registered"); 
+        sendReply(senderFd, macroToString(ERR_NOTREGISTERED) + " * :You have not registered"); 
         return;
     }
     std::string errorMsg;
@@ -135,6 +135,11 @@ void Server::handlePrivmsg(int senderFd, const std::vector<std::string>& tokens)
 
 void Server::handlePart(int clientFd, const std::string& command)
 {
+    if (!_clients[clientFd]->isRegistered())
+    {
+        sendReply(clientFd, macroToString(ERR_NOTREGISTERED) + " * :You have not registered"); 
+        return;
+    }
     std::vector<std::string> tokens;
     size_t                   start = 0;
     
@@ -249,17 +254,23 @@ void Server::handlePong(int clientFd, const std::vector<std::string>& tokens)
 
 void Server::handleQuit(int clientFd, const std::vector<std::string>& tokens)
 {
+    if (!_clients[clientFd]->isRegistered())
+    {
+        close(clientFd);
+        delete _clients[clientFd];
+        _clients.erase(clientFd);
+        return;
+    }
     std::string nick = _clients[clientFd]->getNickname().empty() ? "*" : _clients[clientFd]->getNickname();
     std::string message = "Client quit";
     if (tokens.size() >= 2 && tokens[1][0] == ':')
         message = tokens[1].substr(1);
     else if (tokens.size() >= 2)
         message = tokens[1];
-    // Build QUIT message
+        
     Client* client = _clients[clientFd];
     std::string quitMsg = ":" + client->getNickname() + "!" + client->getUsername() + "@" + 
                           client->getHostname() + " QUIT :" + message;
-    // Notify users in shared channels
     for (std::map<std::string, Channel*>::iterator it = _channels.begin(); it !=_channels.end(); ++it)
     {
         Channel* channel = it->second;
@@ -392,6 +403,12 @@ void Server::topicCommand(int userFd, std::string channelName, std::string topic
 
 void Server::inviteCommand(int senderFd, const std::vector<std::string>& tokens) // Taha compilation Error //fixed
 {
+    if (!_clients[senderFd]->isRegistered())
+    {
+        sendReply(senderFd, macroToString(ERR_NOTREGISTERED) + " * :You have not registered"); 
+        return;
+    }
+    
     if (tokens.size() < 3)
     {
         sendError(senderFd, ERR_NEEDMOREPARAMS, "INVITE :Not enough parameters");
@@ -449,6 +466,11 @@ void Server::inviteCommand(int senderFd, const std::vector<std::string>& tokens)
 
 void Server::kickCommand(int senderFd, const std::vector<std::string>& tokens)
 {
+    if (!_clients[senderFd]->isRegistered())
+    {
+        sendReply(senderFd, macroToString(ERR_NOTREGISTERED) + " * :You have not registered"); 
+        return;
+    }
     if (tokens.size() < 3)
     {
         sendReply(senderFd, "461 KICK :Not enough parameters");
@@ -513,6 +535,11 @@ void Server::kickCommand(int senderFd, const std::vector<std::string>& tokens)
 
 void Server::modeCommand(int userFd, const std::vector<std::string>& tokens)
 {
+    if (!_clients[userFd]->isRegistered())
+    {
+        sendReply(userFd, macroToString(ERR_NOTREGISTERED) + " * :You have not registered"); 
+        return;
+    }
     if (tokens.size() < 2)
     {
         sendToClient(userFd, ERR_NEEDMOREPARAMS, "MODE :Not enough parameters");

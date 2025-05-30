@@ -6,7 +6,7 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/28 10:53:08 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/28 10:55:47 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/30 10:39:52 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -188,6 +188,11 @@ void Server::sendToClientTarget(int senderFd, const std::string& target, const s
 
 void Server::parseJoinCommand(int userFd, const std::string& command)
 {
+    if (!_clients[userFd]->isRegistered())
+    {
+        sendReply(userFd, macroToString(ERR_NOTREGISTERED) + " * :You have not registered"); 
+        return;
+    }
     std::vector<std::string> tokens;
     size_t                   start = 0;
 
@@ -255,6 +260,11 @@ void Server::parseJoinCommand(int userFd, const std::string& command)
 
 void Server::parseTopicCommand( int userFd, const std::string& command)
 {
+    if (!_clients[userFd]->isRegistered())
+    {
+        sendReply(userFd, macroToString(ERR_NOTREGISTERED) + " * :You have not registered"); 
+        return;
+    }
    std::vector<std::string> tokens;
     size_t                   start = 0;
 

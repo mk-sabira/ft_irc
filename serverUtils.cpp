@@ -6,7 +6,7 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/28 10:50:44 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/30 09:51:39 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/30 10:35:42 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -129,7 +129,6 @@ void Server::boolSendToClient(int fd, int code, const std::string& message)
 void Server::removeClient(int clientFd)
 {
     close(clientFd);
-    // Remove client from all channels first - Dina
     for (std::map<std::string, Channel*>::iterator it = _channels.begin(); it != _channels.end(); )
     {
         Channel* channel = it->second;
@@ -138,7 +137,6 @@ void Server::removeClient(int clientFd)
             channel->removeUser(clientFd);
             channel->removeOperator(clientFd); // Safe even if not operator
 
-            // Optional: delete empty channel
             if (channel->getUserFds().empty())
             {
                 delete channel;
@@ -157,14 +155,12 @@ void Server::removeClient(int clientFd)
         }
     }
 
-    // Delete the Client object and erase from map
     std::map<int, Client*>::iterator clientIt = _clients.find(clientFd);
     if (clientIt != _clients.end())
     {
-        delete clientIt->second; // Free the memory - Dina
-        _clients.erase(clientIt); // Remove from map - Dina
+        delete clientIt->second;
+        _clients.erase(clientIt);
     }
-
     std::cout << "Client FD " << clientFd << RED << " disconnected!" << RESET << std::endl;
 }
 
@@ -182,7 +178,7 @@ std::vector<std::string> Server:: splitByComma(const std::string& str)
     return result;
 }
 
-std::string vecToStr(std::vector<std::string> vec) // Taha changed form string& to string
+std::string vecToStr(std::vector<std::string> vec)
 {
     std::string str;
 
@@ -197,14 +193,13 @@ std::string vecToStr(std::vector<std::string> vec) // Taha changed form string& 
 
 bool stringToInt(const std::string& str, int& result)
 {
-    std::istringstream iss(str);  // Create a string stream from the input string
-    iss >> result;                // Try to extract an int from the string
+    std::istringstream iss(str);
+    iss >> result; 
 
-    // Check for conversion failure or extra characters
     if (iss.fail() || !iss.eof())
-        return false;             // Conversion failed or leftover characters exist
+        return false; 
 
-    return true;                  // Successful conversion
+    return true; 
 }
 
 std::string Server::macroToString(int macro)

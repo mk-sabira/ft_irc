@@ -6,7 +6,7 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/02 10:10:44 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/30 09:47:16 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/30 10:39:40 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,6 +56,7 @@
 #define RPL_YOURHOST            002 // USER, NICK
 #define RPL_CREATED             003 // USER, NICK
 #define RPL_MYINFO              004 // USER, NICK
+#define ERR_NOTREGISTERED       451 // JOIN, TOPIC, INVITE, KICK, MODE, PART, PRIVMSG 
 #define ERR_UNKNOWNCOMMAND 		421 // UNKNOWN
 
 
