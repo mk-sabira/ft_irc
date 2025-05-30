@@ -224,7 +224,7 @@ void Server::partUser(int clientFd, const std::string& channelName, const std::s
     channel->removeOperator(clientFd);
     if (!channel->hasOperators() && !channel->getUserFds().empty())
     {
-        int newOpFd = channel->getUserFds().begin(); // Or any logic to pick a user
+        int newOpFd = *(channel->getUserFds().begin()); // Or any logic to pick a user
         channel->addOperator(newOpFd);
 
         std::string newOpNick = _clients[newOpFd]->getNickname();
@@ -646,11 +646,16 @@ void Server::modeCommand(int userFd, const std::vector<std::string>& tokens)
                 {
                     int limit = 0;
                     stringToInt(tokens[3], limit);
-				    channel.setUserLimit(sign, limit, *this, userFd);
+                    if (limit < 1)
+                    {
+                        sendToClient(userFd, ERR_NEEDMOREPARAMS, " MODE :Invalid channel limit (must be at least 1)");
+                        return ;
+                    }
+				    channel.setUserLimit(limit);
                     paramIndex++;
                 }
                 else
-				    channel.setUserLimit(sign, -1, *this, userFd);
+				    channel.setUserLimit(-1);
 				break;
 			}
 		

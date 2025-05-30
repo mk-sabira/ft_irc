@@ -147,13 +147,8 @@ void Channel::setOperatorMode(const char   sign, int userFd)
         this->removeOperator(userFd);
 }
 
-void Channel::setUserLimit(const char   sign, int limit, Server &server, int senderFd)
+void Channel::setUserLimit(int limit)
 {
-    if (sign == '+' && limit < 1)
-    {
-        server.sendToClient(senderFd, ERR_NEEDMOREPARAMS, " MODE :Invalid channel limit (must be at least 1)");
-        return ;
-    }
     this->_userLimit = limit;
 }
 

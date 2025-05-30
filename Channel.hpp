@@ -76,7 +76,7 @@ class Channel
         void	setRestrictions(const char   sign);
         void	setKeyMode(const char   sign, const std::string& key);
         void	setOperatorMode(const char   sign, int userFd);
-        void	setUserLimit(const char   sign, int limit, Server &server, int senderFd);
+        void	setUserLimit(int limit);
 		
         //---------------helper functions---------------
 		
