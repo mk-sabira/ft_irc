@@ -6,7 +6,7 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/09 10:59:00 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/30 11:36:54 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/30 13:04:04 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -103,7 +103,7 @@ void Server::handleUser(int clientFd, const std::vector<std::string>& tokens)
         sendReply(clientFd, "002 " + _clients[clientFd]->getNickname() + " :Your host is " + _serverName);
         sendReply(clientFd, "003 " + _clients[clientFd]->getNickname() + " :This server was created today");
         sendReply(clientFd, "004 " + _clients[clientFd]->getNickname() + " :" + _serverName + " 1.0");
-        std::cout << CYAN << "handleUser New client connected: FD = " << clientFd << RESET << std::endl;
+        std::cout << CYAN << "New client connected: FD = " << clientFd << RESET << std::endl;
     }
 }
     
@@ -123,6 +123,11 @@ void Server::handlePrivmsg(int senderFd, const std::vector<std::string>& tokens)
     std::string targetNick = tokens[1];
     std::string message = buildPrivmsg(tokens);
 
+    if (tokens[1][0] != '#' && !_clients[getClientByNickname(targetNick)->getFd()]->isRegistered())
+    {
+        sendReply(senderFd, macroToString(ERR_NOTREGISTERED) + " * :The user is not registered"); 
+        return;
+    }
     if(targetNick[0] == '#')
         sendToChannelTarget(senderFd, targetNick, message);
     else
@@ -423,6 +428,11 @@ void Server::inviteCommand(int senderFd, const std::vector<std::string>& tokens)
     if (!targetClient)
     {
         sendToClient(senderFd, ERR_NOSUCHNICK, targetNick + " :No such nick");
+        return;
+    }
+    if (!_clients[targetClient->getFd()]->isRegistered())
+    {
+        sendReply(senderFd, macroToString(ERR_NOTREGISTERED) + " * :The user is not registered"); 
         return;
     }
     std::map<std::string, Channel*>::iterator it = _channels.find(channelName);

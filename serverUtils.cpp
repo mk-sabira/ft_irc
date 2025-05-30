@@ -6,7 +6,7 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/28 10:50:44 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/30 11:38:54 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/30 13:04:23 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -142,6 +142,17 @@ void Server::removeClient(int clientFd)
                 _channels.erase(it++);
                 continue;
             }
+            else if (!channel->hasOperators())
+            {
+                int newOpFd = *(channel->getUserFds().begin());
+                channel->addOperator(newOpFd);
+        
+                std::string newOpNick = _clients[newOpFd]->getNickname();
+                std::string modeMsg = ":" + _serverName + " MODE " + channel->getName() + " +o " + newOpNick;
+        
+                channel->broadcastToAllRaw(modeMsg, this);
+            }
+            
         }
         ++it;
     }
