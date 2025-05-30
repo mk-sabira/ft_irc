@@ -6,7 +6,7 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/09 10:59:00 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/28 10:59:19 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/30 09:56:54 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,7 +28,7 @@ void Server::handlePass(int clientFd, const std::vector<std::string>& tokens)
     if (tokens[1] != getPassword())
     {
         sendReply(clientFd, macroToString(ERR_PASSWDMISMATCH) + " " + nick + " :Password incorrect");
-        removeClient(clientFd);
+        // removeClient(clientFd);
         return ;
     }
     _clients[clientFd]->setAuthenticated(true);
@@ -45,31 +45,36 @@ void Server::handleNick(int clientFd, const std::vector<std::string>& tokens)
         sendReply(clientFd, macroToString(ERR_NONICKNAMEGIVEN) + " " + nick + " :No nickname given");
         return;
     }
-    if (tokens.size() != 2)
+    std::string newNick = tokens[1];
+    if (!validateNick(newNick))
     {
-        sendReply(clientFd, macroToString(ERR_ERRONEUSNICKNAME) + " " + nick + " :Erroneous nickname");
+        sendReply(clientFd, macroToString(ERR_ERRONEUSNICKNAME) + " " + newNick + " :Erroneous nickname");
         return ;
     }
-    if (!validateNick(tokens[1]))
-    {
-        sendReply(clientFd, macroToString(ERR_ERRONEUSNICKNAME) + " " + nick + " :Erroneous nickname");
-        return ;
-    }
+    // Check if nickname is already in use
     for (std::map<int, Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it)
     {
-        if (it->first != clientFd && it->second->getNickname() == tokens[1])
+        if (it->second->getNickname() == newNick && it->first != clientFd)
         {
-            sendReply(clientFd, macroToString(ERR_NICKNAMEINUSE) + " " + tokens[1] + " :Nickname is already in use");
+            sendReply(clientFd, macroToString(ERR_NICKNAMEINUSE) + " " + newNick + " :Nickname is already in use");
             return;
         }
     }
-    _clients[clientFd]->setNickname(tokens[1]);
-    if (_clients[clientFd]->isAuthenticated() && !_clients[clientFd]->getNickname().empty() && !_clients[clientFd]->getUsername().empty())
+    
+    Client* cleint = _clients[clientFd];
+    std::string oldNick = cleint->getNickname();
+    cleint->setNickname(newNick);
+    
+    // Notify channels if already registered
+    if (_clients[clientFd]->isRegistered())
+        notifyChangeNick(clientFd, oldNick, newNick);
+    
+    if (_clients[clientFd]->isAuthenticated() && 
+        !_clients[clientFd]->getNickname().empty() && 
+        !_clients[clientFd]->getUsername().empty() &&
+        !_clients[clientFd]->isRegistered())
     {
-        if (_clients[clientFd]->getNickname().empty())
-             _clients[clientFd]->setRegistered(true);
-        else
-            _clients[clientFd]->setNickname(tokens[1]);
+        _clients[clientFd]->setRegistered(true);
         sendReply(clientFd, "001 " + _clients[clientFd]->getNickname() + " :Welcome to the IRC server");
         sendReply(clientFd, "002 " + _clients[clientFd]->getNickname() + " :Your host is " + _serverName);
         sendReply(clientFd, "003 " + _clients[clientFd]->getNickname() + " :This server was created today");
@@ -94,7 +99,7 @@ void Server::handleUser(int clientFd, const std::vector<std::string>& tokens)
     }
     _clients[clientFd]->setUsername(tokens[1]);
     _clients[clientFd]->setRealname(tokens[4]);
-    if (_clients[clientFd]->isAuthenticated() && !_clients[clientFd]->getNickname().empty() && !_clients[clientFd]->getUsername().empty())
+    if (_clients[clientFd]->isAuthenticated() && !_clients[clientFd]->getNickname().empty() && !_clients[clientFd]->getUsername().empty() && !_clients[clientFd]->isRegistered())
     {
         _clients[clientFd]->setRegistered(true);
         sendReply(clientFd, "001 " + _clients[clientFd]->getNickname() + " :Welcome to the IRC server");
@@ -107,7 +112,11 @@ void Server::handleUser(int clientFd, const std::vector<std::string>& tokens)
     
 void Server::handlePrivmsg(int senderFd, const std::vector<std::string>& tokens)
 {
-    
+    if (!_clients[senderFd]->isRegistered())
+    {
+        sendReply(senderFd, macroToString(451) + " * :You have not registered"); 
+        return;
+    }
     std::string errorMsg;
     if (!validatePrivmsg(senderFd, tokens, errorMsg))
     {

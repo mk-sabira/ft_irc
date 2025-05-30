@@ -290,3 +290,14 @@ void    Channel::kickUser(int clientFd)
     this->removeOperator(clientFd);
     this->removeUser(clientFd);
 }
+
+//sabira added to notify channesl
+bool Channel::hasMember(Client* client)
+{
+    for (std::map<int, Client*>::const_iterator it = _users.begin(); it != _users.end(); ++it) // Iterate over _users
+    {
+        if (it->second == client)
+            return true;
+    }
+    return false;
+}

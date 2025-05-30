@@ -6,7 +6,7 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/28 10:50:44 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/28 10:58:31 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/30 09:51:39 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,6 +29,29 @@ void Server::welcomeMessage()
           << "    ║                                                      ║\n"
           << "    ╚══════════════════════════════════════════════════════╝\n"
           << RESET << std::endl;
+}
+
+void Server::notifyChangeNick(int clientFd, const std::string& oldNick, const std::string& newNick)
+{
+    Client* client = _clients[clientFd];
+    std::string user = client->getUsername();
+    std::string host = client->getHostname();
+    std::string nickMsg = ":" + (oldNick.empty() || oldNick == "*" ? newNick : oldNick) + "!" + user + "@" + host + " NICK :" + newNick + "\r\n";
+    for (std::map<std::string, Channel*>::iterator it = _channels.begin(); it != _channels.end(); ++it)
+    {
+        Channel* channel = it->second;
+        if (channel->isUser(clientFd))
+        {
+            std::set<int> memberFds = channel->getUserFds();
+            for (std::set<int>::iterator memIt = memberFds.begin(); memIt != memberFds.end(); ++memIt)
+            {
+                int fd = *memIt;
+                sendRaw(fd, nickMsg);
+            }
+            // channel->updateNickname(oldNick.empty() || oldNick == "*" ? newNick : oldNick, newNick); // Update nickname
+        }
+    }
+    sendRaw(clientFd, nickMsg);
 }
 
 void Server::sendReply(int clientFd, const std::string& message)

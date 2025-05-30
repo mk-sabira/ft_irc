@@ -6,7 +6,7 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/02 10:10:44 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/28 11:02:07 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/30 09:47:16 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -101,6 +101,7 @@ private:
 	    
 	    void handleNick(int clientFd, const std::vector<std::string>& tokens);
 	    bool validateNick(const std::string& nick);
+		void notifyChangeNick(int clientFd, const std::string& oldNick, const std::string& newNick);
 	    
 	    void handleUser(int clientFd, const std::vector<std::string>& tokens);
 	    bool validateUser(int clientFd, const std::vector<std::string>& tokens, std::string& errorMsg);

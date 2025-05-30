@@ -51,6 +51,8 @@ class Channel
         Channel& operator=(Channel& other);
         Channel(Channel& other);
         
+        //sabira added to notify channesl
+        bool hasMember(Client* client);
     public:
         Channel();
         Channel(const std::string& name);
