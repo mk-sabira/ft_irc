@@ -147,11 +147,11 @@ void Channel::setOperatorMode(const char   sign, int userFd)
         this->removeOperator(userFd);
 }
 
-void Channel::setUserLimit(const char   sign, int limit)
+void Channel::setUserLimit(const char   sign, int limit, Server &server, int senderFd)
 {
     if (sign == '+' && limit < 1)
     {
-        //error
+        server.sendToClient(senderFd, ERR_NEEDMOREPARAMS, " MODE :Invalid channel limit (must be at least 1)");
         return ;
     }
     this->_userLimit = limit;
@@ -175,8 +175,6 @@ bool Channel::isOperator(int clientFd) const
 
 bool Channel::isInviteOnly() const
 {
-    // if (this->_inviteOnly)
-    //     return true;
     return _inviteOnly;
 }
 
@@ -190,6 +188,13 @@ bool Channel::isInvited(int clientFd) const
 bool Channel::hasKey() const
 {
     if (this->_key.empty())
+        return false;
+    return true;
+}
+
+bool Channel::hasOperators() const
+{
+    if (this->_operators.empty())
         return false;
     return true;
 }
@@ -291,7 +296,6 @@ void    Channel::kickUser(int clientFd)
     this->removeUser(clientFd);
 }
 
-//sabira added to notify channesl
 bool Channel::hasMember(Client* client)
 {
     for (std::map<int, Client*>::const_iterator it = _users.begin(); it != _users.end(); ++it) // Iterate over _users
