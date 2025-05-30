@@ -29,29 +29,25 @@
 #include <set>
 #include <vector>
 #include <cerrno>
-
 #include "Client.hpp"
 
 class Server;
-
-
 class Channel
 {
     private:
-        std::string  _name;  //channel name
-        std::string  _topic; //description of channel
-        std::string  _key;   //optional password to join the channel
-        int       _userLimit;  //max num of users in the channel
-        bool         _inviteOnly; //invite onlu mode +i
-        bool         _topicRestricted;    //topic can be changed? +t
-        std::map<int, Client*> _users;   //map of users in the channel with their socket or id
-        std::set<int>   _operators;      // set of users (socket, id) who are operators +o
-        std::set<int>   _invited;        //which user have been invited, check access for invite-only channels
+        std::string  _name;
+        std::string  _topic;
+        std::string  _key;  
+        int       _userLimit; 
+        bool         _inviteOnly; 
+        bool         _topicRestricted;
+        std::map<int, Client*> _users; 
+        std::set<int>   _operators; 
+        std::set<int>   _invited; 
         
         Channel& operator=(Channel& other);
         Channel(Channel& other);
         
-        //sabira added to notify channesl
         bool hasMember(Client* client);
     public:
         Channel();
@@ -98,8 +94,8 @@ class Channel
         void	inviteUser(int clientFd);
         void 	kickUser(int targetFd);
         void    broadcastToAll(const std::string& message, Server* server);
-        void    boolBroadCastToAll(const std::string& message, Server* server, bool useServerPrefix); // taha fixing limechat
-		void 	broadcastToAllRaw(const std::string& message, Server* server); // taha for end command
+        void    boolBroadCastToAll(const std::string& message, Server* server, bool useServerPrefix);
+		void 	broadcastToAllRaw(const std::string& message, Server* server);
 };
 
 

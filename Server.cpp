@@ -6,7 +6,7 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/02 10:25:46 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/28 10:59:32 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/30 11:14:10 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,12 +16,10 @@ volatile sig_atomic_t Server::keepRunning = 1;
 
 Server::~Server()
 {
-    // Delete all Clients
     for (std::map<int, Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it)
         delete it->second;
     _clients.clear();
 
-    // Delete all Channels
     for (std::map<std::string, Channel*>::iterator it = _channels.begin(); it != _channels.end(); ++it)
         delete it->second;
     _channels.clear();

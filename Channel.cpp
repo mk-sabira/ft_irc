@@ -4,6 +4,7 @@
 
 
 //----------------- Constructors + Destructor --------------------
+
 Channel::Channel()
     : _name(""),
       _topic(""),
@@ -20,10 +21,7 @@ Channel::Channel(const std::string& name)
       _inviteOnly(false),
       _topicRestricted(true)
 {}
-Channel& Channel::operator=(Channel& other) {
-    (void)other;
-    return *this;}
-Channel::Channel(Channel& other) { (void) other;}
+
 Channel::~Channel() {}
 
 
@@ -49,19 +47,19 @@ std::string Channel::getModeString() const
     std::string modes = "+";
     std::string params;
 
-    if (_inviteOnly) // 'i' 
+    if (_inviteOnly)
         modes += "i";
 
-    if (_topicRestricted) // 't' 
+    if (_topicRestricted)
         modes += "t";
 
-    if (hasKey()) // 'k' 
+    if (hasKey())
     {
         modes += "k";
         params += " " + _key;
     }
 
-    if (_userLimit >= 0) // 'l' 
+    if (_userLimit >= 0)
     {
         modes += "l";
         std::ostringstream oss;
@@ -152,7 +150,7 @@ void Channel::setUserLimit(int limit)
     this->_userLimit = limit;
 }
 
-        //---------------helper functions---------------
+//---------------helper functions---------------
 
 bool Channel::isUser(int clientFd) const
 {
@@ -241,7 +239,7 @@ bool Channel::canJoin(const std::string& key)
 
 }
 
-void Channel::addUser(int clientFd, Client* client) // Taha fixed...
+void Channel::addUser(int clientFd, Client* client)
 {
     if (!client)
         return;
@@ -293,7 +291,7 @@ void    Channel::kickUser(int clientFd)
 
 bool Channel::hasMember(Client* client)
 {
-    for (std::map<int, Client*>::const_iterator it = _users.begin(); it != _users.end(); ++it) // Iterate over _users
+    for (std::map<int, Client*>::const_iterator it = _users.begin(); it != _users.end(); ++it)
     {
         if (it->second == client)
             return true;

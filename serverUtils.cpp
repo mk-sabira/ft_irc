@@ -6,7 +6,7 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/28 10:50:44 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/30 10:35:42 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/30 11:38:54 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -48,7 +48,6 @@ void Server::notifyChangeNick(int clientFd, const std::string& oldNick, const st
                 int fd = *memIt;
                 sendRaw(fd, nickMsg);
             }
-            // channel->updateNickname(oldNick.empty() || oldNick == "*" ? newNick : oldNick, newNick); // Update nickname
         }
     }
     sendRaw(clientFd, nickMsg);
@@ -135,7 +134,7 @@ void Server::removeClient(int clientFd)
         if (channel->isUser(clientFd))
         {
             channel->removeUser(clientFd);
-            channel->removeOperator(clientFd); // Safe even if not operator
+            channel->removeOperator(clientFd);
 
             if (channel->getUserFds().empty())
             {
@@ -178,7 +177,7 @@ std::vector<std::string> Server:: splitByComma(const std::string& str)
     return result;
 }
 
-std::string vecToStr(std::vector<std::string> vec)
+std::string Server::vecToStr(std::vector<std::string> vec)
 {
     std::string str;
 
@@ -191,7 +190,7 @@ std::string vecToStr(std::vector<std::string> vec)
     return (str);
 }
 
-bool stringToInt(const std::string& str, int& result)
+bool Server::stringToInt(const std::string& str, int& result)
 {
     std::istringstream iss(str);
     iss >> result; 

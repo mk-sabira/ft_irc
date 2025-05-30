@@ -6,7 +6,7 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/08 13:59:47 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/28 11:03:18 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/30 11:23:51 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,25 +18,12 @@ Client::Client()
     _buffer = "";
     _nickname = "";
     _username = "";
-    _realname = ""; //Stores the client's realname (from USER).
+    _realname = "";
     _registered = false;
     _authenticated = false;
 }
 
 Client::~Client() {}
-
-Client::Client(const Client &copy)
-{
-    (void)copy;
-    // all the atrubutes must be copied
-}
-
-Client &Client::operator=(const Client &obj)
-{
-    (void)obj;
-    // must be reassigned
-    return (*this);
-}
 
 // ------------ GETTERS -----------------
 std::string &Client::getBuffer()

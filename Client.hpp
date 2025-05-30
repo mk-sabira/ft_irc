@@ -6,7 +6,7 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/08 13:55:47 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/25 09:09:24 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/30 11:24:35 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,16 +22,16 @@ class Client
         std::string _buffer;
         std::string _nickname;
         std::string _username;
-        std::string _realname; //Stores the client's realname (from USER).
-        std::string _hostname; // Taha trying to fix lime chat
+        std::string _realname;
+        std::string _hostname;
         bool _registered;
         bool _authenticated;
     
+        Client(const Client& copy);
+        Client& operator=(const Client& obj);
     public:
         Client();
         ~Client();
-        Client(const Client& copy);
-        Client& operator=(const Client& obj);
 
         //setters
         void setBuffer(const std::string& buffer);
@@ -41,7 +41,7 @@ class Client
         void setUsername(const std::string& username);
         void setRealname(const std::string& realname);
         void setRegistered(bool registered);
-        void setHostname(const std::string& hostname); // Taha trying to fix lime chat
+        void setHostname(const std::string& hostname);
         
         // Getter
         std::string& getBuffer();
@@ -51,7 +51,6 @@ class Client
         std::string& getUsername();
         std::string& getRealname();
         bool isRegistered() const;
-        // Dina Channel
 		std::string    getPrefix()const;
         std::string getHostname() const;
 };

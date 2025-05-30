@@ -6,7 +6,7 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/02 10:10:44 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/30 10:39:40 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/30 11:26:27 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,7 +16,6 @@
 
 #include <iostream>
 #include <cstring>
-#include <cstdlib> // for atoi
 #include <sys/socket.h>
 #include <sstream>
 #include <exception>
@@ -25,7 +24,8 @@
 #include <map>
 #include <csignal>
 #include <unistd.h> 
-#include <netinet/in.h>   // For sockaddr_in structure, which is used for specifying socket addresses
+#include <netinet/in.h> 
+#include <cstdlib>
 #include <poll.h>
 #include "colors.hpp"
 #include "Client.hpp"
@@ -88,8 +88,8 @@ private:
 	    std::vector<struct pollfd> _fds;
 	    std::map<int, Client*> _clients;
 	    std::string _serverName;
-	    std::map<std::string, Channel*> _channels; // <name, obj> // Dina Channel // Taha compilation error
-	    std::map<std::string, int> _nickToFd; // <nickname, fd> // Dina Channel // Taha compilation error
+	    std::map<std::string, Channel*> _channels;
+	    std::map<std::string, int> _nickToFd;
 	    
 		void welcomeMessage();
 	    void acceptNewClient();
@@ -137,30 +137,26 @@ public:
 	    int getPort() const;
 	    std::string getPassword() const;
 		CommandType getCommandtype (const std::string& command);
+		std::string getClientPrefix(int fd) const;
 	    
-		//------------------------ // Dina Channel
 	    Client* getClientByNickname(const std::string&);
-	    // std::string getClientNickname(int fd) const; // taha compilation error__.
-	    
-	    
-	    //exceptions
 	    class PortOutOfBound: public std::exception
 	    {
 			public:
 	        const char* what() const throw();
 	    };
 	    
-	    //----- helper functions----------- // Dina Channel
+	    //----- helper functions----------- 
 		std::vector<std::string> splitByComma(const std::string& str);
 		void sendReply(int clientFd, const std::string& message);
-		void boolSendReply(int clientFd, const std::string& message, bool useServerPrefix); // taha fixing limechat
-		void sendRaw(int clientFd, const std::string& rawMessage); // taha for end command
+		void boolSendReply(int clientFd, const std::string& message, bool useServerPrefix);
+		void sendRaw(int clientFd, const std::string& rawMessage); 
 	    void    sendError(int userFd, int errorCode, const std::string& message);
 	    void    sendToClient(int fd, int code, const std::string& message);
 		void    boolSendToClient(int fd, int code, const std::string& message);
-	    //-------- CHANNEL ---------------------- // Dina channel
-	    void broadcastToAll(const Channel& channel, const std::string& msg, int excludeFd); // Taha compilation error
 		
+	    //-------- CHANNEL ---------------------- 
+	    void broadcastToAll(const Channel& channel, const std::string& msg, int excludeFd);
 		void 	parseJoinCommand(int userFd, const std::string& command);
 	    void    joinCommand(int userFd, std::string channelName, std::string key);
 		void	parseTopicCommand( int userFd, const std::string& command);
@@ -169,14 +165,8 @@ public:
 	    void    inviteCommand(int senderFd, const std::vector<std::string>& tokens);
 		void	modeCommand(int userFd, const std::vector<std::string>& tokens);
 		void	partUser(int clientFd, const std::string& channelName, const std::string& comment);
-
-	    
-	    //------ CHANNEL Taha --------//
-	    
-	    std::string getClientPrefix(int fd) const;
+		bool		stringToInt(const std::string& str, int& result);
+		std::string vecToStr(std::vector<std::string> vec);
 };
-
-bool		stringToInt(const std::string& str, int& result);
-std::string vecToStr(std::vector<std::string> vec);
 
 #endif

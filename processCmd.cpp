@@ -6,7 +6,7 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/09 10:59:00 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/30 10:41:55 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/30 11:36:54 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,7 +28,6 @@ void Server::handlePass(int clientFd, const std::vector<std::string>& tokens)
     if (tokens[1] != getPassword())
     {
         sendReply(clientFd, macroToString(ERR_PASSWDMISMATCH) + " " + nick + " :Password incorrect");
-        // removeClient(clientFd);
         return ;
     }
     _clients[clientFd]->setAuthenticated(true);
@@ -51,7 +50,6 @@ void Server::handleNick(int clientFd, const std::vector<std::string>& tokens)
         sendReply(clientFd, macroToString(ERR_ERRONEUSNICKNAME) + " " + newNick + " :Erroneous nickname");
         return ;
     }
-    // Check if nickname is already in use
     for (std::map<int, Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it)
     {
         if (it->second->getNickname() == newNick && it->first != clientFd)
@@ -65,7 +63,6 @@ void Server::handleNick(int clientFd, const std::vector<std::string>& tokens)
     std::string oldNick = cleint->getNickname();
     cleint->setNickname(newNick);
     
-    // Notify channels if already registered
     if (_clients[clientFd]->isRegistered())
         notifyChangeNick(clientFd, oldNick, newNick);
     
@@ -79,7 +76,7 @@ void Server::handleNick(int clientFd, const std::vector<std::string>& tokens)
         sendReply(clientFd, "002 " + _clients[clientFd]->getNickname() + " :Your host is " + _serverName);
         sendReply(clientFd, "003 " + _clients[clientFd]->getNickname() + " :This server was created today");
         sendReply(clientFd, "004 " + _clients[clientFd]->getNickname() + " :" + _serverName + " 1.0");
-        std::cout << CYAN << "handleNick New client connected: FD = " << clientFd << RESET << std::endl;
+        std::cout << CYAN << "New client connected: FD = " << clientFd << RESET << std::endl;
     }
 }
 
@@ -179,7 +176,6 @@ void Server::handlePart(int clientFd, const std::string& command)
         }
     }
 
-    // Split channel list
     std::vector<std::string> channelList;
     std::string::size_type chanStart = 0;
     std::string::size_type chanEnd;
@@ -190,7 +186,6 @@ void Server::handlePart(int clientFd, const std::string& command)
     }
     if (chanStart < channels.length())
         channelList.push_back(channels.substr(chanStart));
-    
     for (size_t i = 0; i < channelList.size(); ++i)
         partUser(clientFd, channelList[i], comment);
 }
@@ -215,7 +210,7 @@ void Server::partUser(int clientFd, const std::string& channelName, const std::s
         boolSendToClient(clientFd, ERR_NOTONCHANNEL, channelName + " :You're not on that channel");
         return;
     }
-    std::string partMsg = ":" + _clients[clientFd]->getPrefix() + " PART " + channelName; //messege to send channel members
+    std::string partMsg = ":" + _clients[clientFd]->getPrefix() + " PART " + channelName;
     if (!comment.empty())
         partMsg += " :" + comment;
     channel->boolBroadCastToAll(partMsg, this, false);
@@ -224,7 +219,7 @@ void Server::partUser(int clientFd, const std::string& channelName, const std::s
     channel->removeOperator(clientFd);
     if (!channel->hasOperators() && !channel->getUserFds().empty())
     {
-        int newOpFd = *(channel->getUserFds().begin()); // Or any logic to pick a user
+        int newOpFd = *(channel->getUserFds().begin());
         channel->addOperator(newOpFd);
 
         std::string newOpNick = _clients[newOpFd]->getNickname();
@@ -233,7 +228,6 @@ void Server::partUser(int clientFd, const std::string& channelName, const std::s
         channel->broadcastToAllRaw(modeMsg, this);
     }
 
-    // Delete channel if empty
     if (channel->getUserFds().empty())
     {
         delete channel;
@@ -291,7 +285,6 @@ void Server::handleQuit(int clientFd, const std::vector<std::string>& tokens)
 }
 
 void Server::joinCommand(int userFd, std::string channelName, std::string key) 
-
 {
     if (channelName == "0")
     {
@@ -353,21 +346,21 @@ void Server::joinCommand(int userFd, std::string channelName, std::string key)
     }
 
     std::string joinMsg = ":" + _clients[userFd]->getPrefix() + " JOIN :" + channelName;
-    channel->boolBroadCastToAll(joinMsg, this, false);  // Don't prepend server name
+    channel->boolBroadCastToAll(joinMsg, this, false);
 
     if (!(channel->getTopic().empty()))
         boolSendToClient(userFd, RPL_TOPIC, channelName + " :" + channel->getTopic());
     else
         boolSendToClient(userFd, RPL_NOTOPIC, channelName + " :No topic is set");
 
-    std::string userList = vecToStr(channel->getNicknamesWithPrefixes());
+    std::string userList = Server::vecToStr(channel->getNicknamesWithPrefixes());
     boolSendToClient(userFd, RPL_NAMREPLY, "= " + channelName + " :" + userList);
     boolSendToClient(userFd, RPL_ENDOFNAMES, channelName + " :End of /NAMES list");
 }
 
 
 
-void Server::topicCommand(int userFd, std::string channelName, std::string topic, bool colon) //commented by Taha compile error! // fixed
+void Server::topicCommand(int userFd, std::string channelName, std::string topic, bool colon)
 {
     if (channelName.empty() || channelName[0] != '#')
     {
@@ -400,7 +393,7 @@ void Server::topicCommand(int userFd, std::string channelName, std::string topic
         sendToClient(userFd, ERR_CHANOPRIVSNEEDED, channelName + " :You're not channel operator"); 
         return;
     }
-    std::string newTopic = topic; // assumes already parsed with ":" removed
+    std::string newTopic = topic;
     if (newTopic.empty())
         channel.clearTopic();
     else
@@ -411,20 +404,18 @@ void Server::topicCommand(int userFd, std::string channelName, std::string topic
 
 }
 
-void Server::inviteCommand(int senderFd, const std::vector<std::string>& tokens) // Taha compilation Error //fixed
+void Server::inviteCommand(int senderFd, const std::vector<std::string>& tokens)
 {
     if (!_clients[senderFd]->isRegistered())
     {
         sendReply(senderFd, macroToString(ERR_NOTREGISTERED) + " * :You have not registered"); 
         return;
     }
-    
     if (tokens.size() < 3)
     {
         sendError(senderFd, ERR_NEEDMOREPARAMS, "INVITE :Not enough parameters");
         return;
     }
-    
     std::string targetNick = tokens[1];
     std::string channelName = tokens[2];
     
@@ -434,7 +425,6 @@ void Server::inviteCommand(int senderFd, const std::vector<std::string>& tokens)
         sendToClient(senderFd, ERR_NOSUCHNICK, targetNick + " :No such nick");
         return;
     }
-
     std::map<std::string, Channel*>::iterator it = _channels.find(channelName);
     if (it == _channels.end())
     {
@@ -443,34 +433,26 @@ void Server::inviteCommand(int senderFd, const std::vector<std::string>& tokens)
     }
 
     Channel& channel = *(it->second);
-
     if (!channel.isUser(senderFd))
     {
-        sendToClient(senderFd, ERR_NOTONCHANNEL, channelName + " :You're not on that channel"); // ERR_NOTONCHANNEL
+        sendToClient(senderFd, ERR_NOTONCHANNEL, channelName + " :You're not on that channel");
         return;
     }
-
     if (channel.isInviteOnly() && !channel.isOperator(senderFd))
     {
         sendToClient(senderFd, ERR_CHANOPRIVSNEEDED, channelName + " :You're not channel operator");
         return;
     }
-
     int targetFd = targetClient->getFd();
-
     if (channel.isUser(targetFd))
     {
         sendToClient(senderFd, ERR_USERONCHANNEL, targetNick + " " + channelName + " :is already on channel");
         return;
     }
     channel.addInvite(targetFd);
-
-    // Notify inviter
-    sendToClient(senderFd, RPL_INVITING, targetNick + " " + channelName); //invite reply
-
-    // Notify invitee // commented by Taha compile error // fixed
+    sendToClient(senderFd, RPL_INVITING, targetNick + " " + channelName);
     std::string inviteMsg = ":" + _clients[senderFd]->getPrefix() + 
-    " INVITE " + targetNick + " :" + channelName;
+        " INVITE " + targetNick + " :" + channelName;
     sendReply(targetFd, inviteMsg);
 }
 
@@ -569,10 +551,8 @@ void Server::modeCommand(int userFd, const std::vector<std::string>& tokens)
     }
     
     Channel& channel = *(it->second);
-    // Client* user = _clients[userFd];
     if (tokens.size() == 2)
     {
-        // Format:		 :server 324 <nick> <channel> <modes> [params]
         sendToClient(userFd, RPL_CHANNELMODEIS, channelName + " " + channel.getModeString());
         return ;
     }
@@ -600,10 +580,8 @@ void Server::modeCommand(int userFd, const std::vector<std::string>& tokens)
 		switch (mode)
 		{
 			case 'i':
-			{
 				channel.setInviteFlag(sign);
 				break;
-			}
 			case 't':
 				channel.setRestrictions(sign);
 				break;
@@ -645,7 +623,7 @@ void Server::modeCommand(int userFd, const std::vector<std::string>& tokens)
                 if (sign == '+')
                 {
                     int limit = 0;
-                    stringToInt(tokens[3], limit);
+                    Server::stringToInt(tokens[3], limit);
                     if (limit < 1)
                     {
                         sendToClient(userFd, ERR_NEEDMOREPARAMS, " MODE :Invalid channel limit (must be at least 1)");
@@ -658,20 +636,15 @@ void Server::modeCommand(int userFd, const std::vector<std::string>& tokens)
 				    channel.setUserLimit(-1);
 				break;
 			}
-		
 			default:
 			{
 				sendToClient(userFd, ERR_UNKNOWNMODE, std::string(1, mode) + " :is unknown mode char");
                 return;
 			}
 		}
-
 	}
-    // Notify all users about the mode change
     std::string fullModeStr = tokens[2];
     for (size_t i = 3; i < tokens.size(); ++i)
         fullModeStr += " " + tokens[i];
-
     channel.broadcastToAll(":" + getClientPrefix(userFd) + " MODE " + tokens[1] + " " + fullModeStr, this);
-
 }
