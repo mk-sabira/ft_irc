@@ -76,7 +76,7 @@ class Channel
         void	setRestrictions(const char   sign);
         void	setKeyMode(const char   sign, const std::string& key);
         void	setOperatorMode(const char   sign, int userFd);
-        void	setUserLimit(const char   sign, int limit);
+        void	setUserLimit(const char   sign, int limit, Server &server, int senderFd);
 		
         //---------------helper functions---------------
 		
@@ -88,6 +88,7 @@ class Channel
         bool	isFull() const;
         bool	canJoin(const std::string& key);
         bool	hasKey() const;
+        bool	hasOperators() const;
         void	removeUser(int clientFd);
         void	removeOperator(int clientFd);
         void	addUser(int clientFd, Client* client);

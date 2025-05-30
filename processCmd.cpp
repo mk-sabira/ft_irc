@@ -217,6 +217,16 @@ void Server::partUser(int clientFd, const std::string& channelName, const std::s
 
     channel->removeUser(clientFd);
     channel->removeOperator(clientFd);
+    if (!channel->hasOperators() && !channel->getUserFds().empty())
+    {
+        int newOpFd = channel->getUserFds().begin(); // Or any logic to pick a user
+        channel->addOperator(newOpFd);
+
+        std::string newOpNick = _clients[newOpFd]->getNickname();
+        std::string modeMsg = ":" + _serverName + " MODE " + channel->getName() + " +o " + newOpNick;
+
+        channel->broadcastToAllRaw(modeMsg, this);
+    }
 
     // Delete channel if empty
     if (channel->getUserFds().empty())
@@ -609,11 +619,11 @@ void Server::modeCommand(int userFd, const std::vector<std::string>& tokens)
                 {
                     int limit = 0;
                     stringToInt(tokens[3], limit);
-				    channel.setUserLimit(sign, limit);
+				    channel.setUserLimit(sign, limit, *this, userFd);
                     paramIndex++;
                 }
                 else
-				    channel.setUserLimit(sign, -1);
+				    channel.setUserLimit(sign, -1, *this, userFd);
 				break;
 			}
 		
