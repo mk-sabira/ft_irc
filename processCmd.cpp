@@ -6,7 +6,7 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/09 10:59:00 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/31 09:22:26 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/31 11:21:19 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -578,9 +578,9 @@ void Server::modeCommand(int userFd, const std::vector<std::string>& tokens)
         sendToClient(userFd, ERR_NOSUCHCHANNEL, tokens[1] + " :No such channel");
         return;
     }
-    
+ 
     Channel& channel = *(it->second);
-    if (tokens.size() == 2)
+    if (tokens.size() == 2 || tokens[2].empty())
     {
         sendToClient(userFd, RPL_CHANNELMODEIS, channelName + " " + channel.getModeString());
         return ;
@@ -602,6 +602,7 @@ void Server::modeCommand(int userFd, const std::vector<std::string>& tokens)
 		return ;
 	}
     size_t paramIndex = 3;
+
 	for (int i = 1; tokens[2][i]; i++)
 	{
 		char mode = tokens[2][i];
