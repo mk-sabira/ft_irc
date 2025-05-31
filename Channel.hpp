@@ -9,16 +9,16 @@
 # define RPL_ENDOFNAMES  366  //End of NAMES list"
 # define ERR_NOSUCHNICK  401 // No such nick
 # define ERR_NOSUCHCHANNEL  403 // No such channel
-# define ERR_USERNOTINCHANNEL  441  //user isn't on that channel
-# define ERR_NOTONCHANNEL  442  // not enough parameters
+# define ERR_USERNOTINCHANNEL  441  //They aren't on that channel
+# define ERR_NOTONCHANNEL  442  // You're not on that channel
 # define ERR_USERONCHANNEL  443  // user is already on channel
 # define ERR_KEYSET  467 // Channel key already set
 # define ERR_NEEDMOREPARAMS  461  // not enough parameters
 # define ERR_ALREADYREGISTRED  462  // :Unauthorized command (already registered)
 # define ERR_CHANNELISFULL  471 // full channel, Cannot 
 # define ERR_UNKNOWNMODE  472 // unknown mode char
-# define ERR_INVITEONLYCHAN  473 // not invited, Cannot join
-# define ERR_BADCHANNELKEY  475 // wrong key, Cannot join
+# define ERR_INVITEONLYCHAN  473 // Cannot join channel (+i)
+# define ERR_BADCHANNELKEY  475 // Cannot join channel (+k)
 # define ERR_CHANOPRIVSNEEDED  482  //not channel operator
 
 

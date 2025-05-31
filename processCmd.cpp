@@ -475,21 +475,32 @@ void Server::kickCommand(int senderFd, const std::vector<std::string>& tokens)
     }
     if (tokens.size() < 3)
     {
-        sendReply(senderFd, "461 KICK :Not enough parameters");
+        sendError(senderFd, ERR_NEEDMOREPARAMS, "KICK :Not enough parameters");
         return;
     }
 
     std::vector<std::string> channels = splitByComma(tokens[1]);
     std::vector<std::string> targetNicks = splitByComma(tokens[2]);
-    std::string reason = (tokens.size() >= 4) ? tokens[3].substr(1) : _clients[senderFd]->getNickname();
-
-    if (channels.size() != 1 && channels.size() != targetNicks.size())
+    std::string reason = "";
+    if (tokens.size() > 3)
     {
-        sendReply(senderFd, "461 KICK :Channel/Nick list mismatch");
+        for(unsigned int i = 3; i < tokens.size(); i++)
+        {
+            reason = reason + tokens[i];
+            if (i + 1 < tokens.size())
+                reason += " ";
+        }
+        if (reason[0] == ':')
+            reason = reason.substr(1);
+    } 
+    else
+        reason = _clients[senderFd]->getNickname();
+    if (channels.empty() || targetNicks.empty() || (channels.size() != 1 && channels.size() != targetNicks.size()))
+    {
+        sendToClient(senderFd, ERR_NEEDMOREPARAMS, "KICK :Not enough parameters");
         return;
     }
-
-    for (size_t i = 0; i < targetNicks.size(); ++i)
+    for (unsigned int i = 0; i < targetNicks.size(); ++i)
     {
         std::string channelName = (channels.size() == 1) ? channels[0] : channels[i];
         std::string targetNick = targetNicks[i];
@@ -497,38 +508,40 @@ void Server::kickCommand(int senderFd, const std::vector<std::string>& tokens)
         std::map<std::string, Channel*>::iterator it = _channels.find(channelName);
         if (it == _channels.end())
         {
-            sendReply(senderFd, "403 " + channelName + " :No such channel");
+            sendToClient(senderFd, ERR_NOSUCHCHANNEL ,channelName + " :No such channel");
+            if (channels.size() == 1)
+                break ;
             continue;
         }
-
         Channel* channel = it->second;
         if (!channel->isUser(senderFd))
         {
-            sendReply(senderFd, "442 " + channelName + " :You're not on that channel");
+            sendToClient(senderFd, ERR_NOTONCHANNEL, channelName + " :You're not on that channel");
             continue;
         }
-
         if (!channel->isOperator(senderFd))
         {
-            sendReply(senderFd, "482 " + channelName + " :You're not channel operator");
+            sendToClient(senderFd, ERR_CHANOPRIVSNEEDED,  channelName + " :You're not channel operator");
             continue;
         }
-
         Client* targetClient = getClientByNickname(targetNick);
         if (!targetClient)
         {
-            sendReply(senderFd, "401 " + targetNick + " :No such nick");
+            sendToClient(senderFd, ERR_NOSUCHNICK, targetNick + " :No such nick");
             continue;
         }
-
         int targetFd = targetClient->getFd();
         if (!channel->isUser(targetFd))
         {
-            sendReply(senderFd, "441 " + targetNick + " " + channelName + " :They aren't on that channel");
+            sendToClient(senderFd, ERR_USERNOTINCHANNEL, targetNick + " " + channelName + " :They aren't on that channel");
             continue;
         }
-
         std::string kickMsg = ":" + _clients[senderFd]->getPrefix() + " KICK " + channelName + " " + targetNick + " :" + reason;
+        if (senderFd == targetFd)
+        {
+            sendReply(senderFd, "ERROR KICK: operator cannot kick himself, use PART instead");
+            continue ;
+        }
 
         channel->broadcastToAllRaw(kickMsg, this);
         channel->kickUser(targetFd);
@@ -568,7 +581,7 @@ void Server::modeCommand(int userFd, const std::vector<std::string>& tokens)
     }
 	if (!channel.isUser(userFd))
     {
-        sendToClient(userFd, ERR_USERONCHANNEL, tokens[1] + " :You're not on that channel");
+        sendToClient(userFd, ERR_NOTONCHANNEL, tokens[1] + " :You're not on that channel");
         return;
     }
 	if (!channel.isOperator(userFd))
