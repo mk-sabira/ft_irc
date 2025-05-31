@@ -6,7 +6,7 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/02 10:10:44 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/30 11:26:27 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/31 09:57:41 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,6 +31,7 @@
 #include "Client.hpp"
 #include "Channel.hpp"
 #include <cerrno>
+#include <cctype>
 #include <arpa/inet.h>
 
 #define ERR_NEEDMOREPARAMS      461 // PASS, USER, PING, PONG, PRIVMSG
@@ -92,6 +93,7 @@ private:
 	    std::map<std::string, int> _nickToFd;
 	    
 		void welcomeMessage();
+		bool isNumeric(const std::string& str);
 	    void acceptNewClient();
 	    void receiveClientData(int clientFd);
 	    bool processCommand(int clientFd, const std::string& cmd);
@@ -141,6 +143,12 @@ public:
 	    
 	    Client* getClientByNickname(const std::string&);
 	    class PortOutOfBound: public std::exception
+	    {
+			public:
+	        const char* what() const throw();
+	    };
+		
+	    class NotNumericPort: public std::exception
 	    {
 			public:
 	        const char* what() const throw();

@@ -6,7 +6,7 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/28 10:50:44 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/30 13:04:23 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/31 09:59:24 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -68,6 +68,16 @@ void Server::sendReply(int clientFd, const std::string& message)
     {
         std::cout << "Partial send to FD " << clientFd << ": " << bytesSent << "/" << msg.length() << " bytes" << std::endl;
     }
+}
+
+bool Server::isNumeric(const std::string& str)
+{
+    for (std::string::const_iterator it = str.begin(); it != str.end(); ++it)
+    {
+        if (!std::isdigit(static_cast<unsigned char>(*it)))
+            return false;
+    }
+    return true;
 }
 
 void Server::sendRaw(int clientFd, const std::string& rawMessage)

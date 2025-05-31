@@ -6,7 +6,7 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/02 10:25:46 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/31 08:25:58 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/31 09:55:40 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,6 +31,8 @@ Server::~Server()
 
 Server::Server(const std::string &port, const std::string &password):_serverFd(-1), _serverName("irc.server")
 {
+    if (!isNumeric(port))
+        throw NotNumericPort();
     std::istringstream ss(port);
     ss >> _port;
     setPort(_port);
@@ -335,4 +337,9 @@ CommandType Server::getCommandtype (const std::string& command)
 const char* Server::PortOutOfBound::what() const throw()
 {
     return ("Port must be between 1024 and 65535");
+}
+
+const char* Server::NotNumericPort::what() const throw()
+{
+    return ("Port must be a numeric string");
 }
