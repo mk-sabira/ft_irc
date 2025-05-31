@@ -6,7 +6,7 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/09 10:59:00 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/30 13:26:06 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/31 09:22:26 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -120,18 +120,24 @@ void Server::handlePrivmsg(int senderFd, const std::vector<std::string>& tokens)
         sendReply(senderFd, errorMsg);
         return;
     }
-    std::string targetNick = tokens[1];
     std::string message = buildPrivmsg(tokens);
-    Client* tragetClient = getClientByNickname(targetNick);
-    if (tokens[1][0] != '#' && tragetClient && !_clients[tragetClient->getFd()]->isRegistered())
+    std::stringstream ss(tokens[1]);
+    std::string targetNick;
+    while (std::getline(ss, targetNick, ','))
     {
-        sendReply(senderFd, macroToString(ERR_NOTREGISTERED) + " * :The user is not registered"); 
-        return;
+        if (targetNick[0] == '#')
+            sendToChannelTarget(senderFd, targetNick, message);
+        else
+        {
+            Client* targetClient = getClientByNickname(targetNick);
+            if (!targetClient || !targetClient->isRegistered())
+            {
+                sendReply(senderFd, macroToString(ERR_NOSUCHNICK) + " " + targetNick + " :No such nick/channel");
+                continue;
+            }
+            sendToClientTarget(senderFd, targetNick, message);
+        }
     }
-    if(targetNick[0] == '#')
-        sendToChannelTarget(senderFd, targetNick, message);
-    else
-        sendToClientTarget(senderFd, targetNick, message);
         
 }
 
