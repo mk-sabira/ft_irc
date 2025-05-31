@@ -6,7 +6,7 @@
 /*   By: bmakhama <bmakhama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/09 10:59:00 by bmakhama          #+#    #+#             */
-/*   Updated: 2025/05/30 13:04:04 by bmakhama         ###   ########.fr       */
+/*   Updated: 2025/05/30 13:26:06 by bmakhama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -122,8 +122,8 @@ void Server::handlePrivmsg(int senderFd, const std::vector<std::string>& tokens)
     }
     std::string targetNick = tokens[1];
     std::string message = buildPrivmsg(tokens);
-
-    if (tokens[1][0] != '#' && !_clients[getClientByNickname(targetNick)->getFd()]->isRegistered())
+    Client* tragetClient = getClientByNickname(targetNick);
+    if (tokens[1][0] != '#' && tragetClient && !_clients[tragetClient->getFd()]->isRegistered())
     {
         sendReply(senderFd, macroToString(ERR_NOTREGISTERED) + " * :The user is not registered"); 
         return;
